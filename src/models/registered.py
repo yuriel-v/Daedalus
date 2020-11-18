@@ -12,3 +12,6 @@ class Registered(Base):
     std_id = Column(Integer, ForeignKey("students.id"), primary_key=True)
     sbj_id = Column(Integer, ForeignKey("subjects.id"), primary_key=True)
     semester = Column(Date)
+
+    def __repr__(self):
+        return f"Registered(std_id={self.std_id}, sbj_id={self.sbj_id}, semester={self.semester}"

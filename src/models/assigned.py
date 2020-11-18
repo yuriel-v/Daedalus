@@ -14,6 +14,9 @@ class Assigned(Base):
     status = Column(Integer)                                               # Status
     exam_type = Column(Integer)                                            # Tipo de trabalho
 
+    def __repr__(self):
+        return f"Assigned(std_id={self.std_id}, sbj_id={self.sbj_id}, status={self.status}, exam_type={self.exam_type}"
+
 # Status:
 # - 0: Pendente
 # - 1: Entrega pendente (tarefa concluída/parcialmente concluída)
