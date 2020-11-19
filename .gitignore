@@ -1,5 +1,6 @@
-# Bot token
+# Bot secrets
 src/secret.py
+src/database/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
