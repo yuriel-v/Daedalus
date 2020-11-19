@@ -1,9 +1,8 @@
 # Arquivo de mapeamento objeto-relacional para matérias.
 
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String
-from models import Base
+from model import Base
 
 
 class Subject(Base):

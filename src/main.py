@@ -11,23 +11,21 @@ Licenciado sob a MIT License.
 Ou seja, faça o que bem entender, eu estou pouco me lixando.
 Contanto que me dê o crédito, claro.
 """
-# Essenciais
-import discord
 
-# Imports parciais de essenciais
+# Essenciais
 from discord.ext import commands
 from secret import daedalus_token
 
 # Imports de módulos customizados
 from misc import Misc, split_args
 from games import Games
-from uni_reminder import UniReminder
+from student_ctrlr import StudentController
 
 # Inicialização
 bot = commands.Bot(command_prefix=['>>', 'Roger '])
 bot.add_cog(Misc(bot))
 bot.add_cog(Games(bot))
-bot.add_cog(UniReminder(bot))
+bot.add_cog(StudentController(bot))
 
 
 # Hello, WARUDO!!

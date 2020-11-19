@@ -1,25 +1,18 @@
 # Módulo de controle para a agenda de trabalhos/provas.
-import sqlalchemy as sqla
-
-from sqlalchemy.orm import sessionmaker
 from discord.ext import commands
-from secret import ownerid
-from models.student import Student
-from models.subject import Subject
-from models.registered import Registered
-from models.assigned import Assigned
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from models import initialize_sql
 from misc import split_args
 
-engin = create_engine('sqlite:///database\\data.db', echo=True)
+from dao import engin
+from dao.studentdao import StudentDao
+from dao.subjectdao import SubjectDao
+from model import initialize_sql
 
 
-class UniReminder(commands.Cog):
+class StudentController(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.smkr = sessionmaker(bind=engin)
+        self.stdao = StudentDao()
+        self.sbdao = SubjectDao()
         initialize_sql(engin)
 
     @commands.command('cadastrar')
@@ -33,27 +26,18 @@ class UniReminder(commands.Cog):
         """
 
         arguments = split_args(ctx.message.content)
-        if len(arguments) < 2 or not str(arguments[0]).isnumeric():
-            await ctx.send("Sintaxe inválida. Exemplo: `>>cadastrar 2020123456 Celso Souza`.")
-            return
-
-        session = self.smkr()
-        new_student = None
-        q = session.query(Student).filter(Student.discord_id == ctx.author.id).all()
-        if len(q) != 0:
+        if self.stdao.find([ctx.author.id], exists=True):
             await ctx.send("Você já está cadastrado.")
-            return
-        else:
-            new_student = Student(registry=arguments[0], name=' '.join(arguments[1::]), discord_id=ctx.author.id)
-            session.add(new_student)
-            session.commit()
 
-            if len(session.query(Student).filter(Student.discord_id == ctx.author.id).all()) != 0:
+        elif len(arguments) < 2 or not str(arguments[0]).isnumeric():
+            await ctx.send("Sintaxe inválida. Exemplo: `>>cadastrar 2020123456 Celso Souza`.")
+
+        else:
+            self.stdao.insert(name=' '.join(arguments[1::]), registry=arguments[0], discord_id=ctx.author.id)
+            if self.stdao.find([ctx.author.id], exists=True):
                 await ctx.send("Cadastro realizado com sucesso.")
             else:
                 await ctx.send("Algo deu errado - cadastro não realizado.")
-
-        session.close()
 
     @commands.command('buscar')
     async def check_student(self, ctx):
@@ -68,12 +52,8 @@ class UniReminder(commands.Cog):
         if len(arguments) == 0:
             await ctx.send("Sintaxe inválida. Exemplo: `>>student 2019123456` (matrícula) ou `>>student João Carlos`.")
             return
-        session = self.smkr()
-        q = None
-        if str(arguments[0]).isnumeric():
-            q = session.query(Student).filter(Student.registry == int(arguments[0])).all()
-        else:
-            q = session.query(Student).filter(Student.name.like(f'%{" ".join(arguments)}%')).all()
+
+        q = self.stdao.find(arguments)
 
         if len(q) == 0:
             await ctx.send("Estudante não encontrado.")
@@ -84,6 +64,23 @@ class UniReminder(commands.Cog):
                 results += f"Matrícula: {match.registry} | Nome: {match.name}\n"
             results += "```"
             await ctx.send(results)
+
+    @commands.command('existe')
+    async def student_exists(self, ctx):
+        exists = self.stdao.find(split_args(ctx.message.content), exists=True)
+
+        if exists:
+            await ctx.send("ID existente.")
+        else:
+            await ctx.send("ID não existente.")
+
+    @commands.command('visualizar')
+    async def view_self(self, ctx):
+        cur_student = self.stdao.find_by_discord_id(ctx.author.id)
+        if cur_student is None:
+            await ctx.send("Você não está cadastrado.")
+        else:
+            await ctx.send(f"Seus dados:```\nMatrícula: {cur_student.registry} | Nome: {cur_student.name}\n```")
 
     @commands.command('editar')
     async def edit_student(self, ctx):
@@ -98,30 +95,23 @@ class UniReminder(commands.Cog):
             await ctx.send("Sintaxe inválida. Exemplo: `>>editar mtr 2019246852` ou `>>editar nome Carlos Eduardo`.")
             return
 
-        session = self.smkr()
-        cur_student = session.query(Student).filter(Student.discord_id == ctx.author.id).first()
+        res = None
 
-        if cur_student is None:
-            await ctx.send("Você não está cadastrado.")
-            return
-
-        session.add(cur_student)
         if str(arguments[0]).lower() == 'nome':
-            print(f"Editar nome para: {' '.join(arguments[1::])}")
-            print(session.dirty)
-            cur_student.name = ' '.join(arguments[1::])
+            res = self.stdao.update(ctx.author.id, name=' '.join(arguments[1::]))
 
         elif str(arguments[0]).lower() == 'mtr':
-            cur_student.registry = int(arguments[1])
+            res = self.stdao.update(ctx.author.id, registry=int(arguments[1]))
 
         else:
             await ctx.send("Campo inválido - o campo pode ser `nome` ou `mtr`.")
-            session.rollback()
-            session.close()
             return
 
-        session.commit()
-        reply = "Dados alterados.```\n"
-        cur_student = session.query(Student).filter(Student.discord_id == ctx.author.id).first()
-        reply += f"Matrícula: {cur_student.registry} | Nome: {cur_student.name}```"
-        await ctx.send(reply)
+        if res != 0:
+            await ctx.send("Você não está cadastrado.")
+
+        else:
+            reply = "Dados alterados.```\n"
+            cur_student = self.stdao.find_by_discord_id(ctx.author.id)
+            reply += f"Matrícula: {cur_student.registry} | Nome: {cur_student.name}```"
+            await ctx.send(reply)

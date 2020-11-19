@@ -1,11 +1,10 @@
 # Arquivo de mapeamento objeto-relacional para matrículas (estudantes matriculados em tal matéria).
 
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, Date, ForeignKey
-from models.student import Student
-from models.subject import Subject
-from models import Base
+from model.student import Student
+from model.subject import Subject
+from model import Base
 
 
 class Registered(Base):

@@ -1,11 +1,10 @@
 # Arquivo de mapeamento objeto-relacional para provas/trabalhos.
 
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, ForeignKey
-from models.student import Student
-from models.subject import Subject
-from models import Base
+from model.student import Student
+from model.subject import Subject
+from model import Base
 
 
 class Assigned(Base):
