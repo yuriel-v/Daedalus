@@ -1,5 +1,5 @@
 """
-Controller para o bot Daedalus.
+Core para o bot Daedalus.
 
 Comandos aqui são somente para fins de teste. Comandos mais sofisticados
 deverão ser adicionados a um "cog", um conjunto de comandos separado e adicionado
@@ -14,16 +14,16 @@ Contanto que me dê o crédito, claro.
 
 # Essenciais
 from discord.ext import commands
-from roger import Roger
 from secret import daedalus_token
 from sqlalchemy.orm import close_all_sessions
 
 # Imports de módulos customizados
-from misc import Misc, split_args
-from games import Games
-from student_ctrlr import StudentController
+from controller.misc import Misc, split_args
+from controller.games import Games
+from controller.student import StudentController
+from controller.roger import Roger
 
-# Por algum motivo, causa, razão ou circunstância, se esses imports não
+# Por alguma causa, motivo, razão ou circunstância, se esses imports não
 # forem feitos, o sistema não mapeia os objetos.
 from model.student import Student
 from model.subject import Subject
