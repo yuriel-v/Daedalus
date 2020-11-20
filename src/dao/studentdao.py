@@ -1,4 +1,3 @@
-from sqlalchemy.orm.session import Session
 from sqlalchemy import literal
 from model.student import Student
 from dao import smkr

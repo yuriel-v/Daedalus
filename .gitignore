@@ -1,7 +1,7 @@
 # Bot secrets
 src/secret.py
-src/roger.py
 src/database/
+src/roger
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

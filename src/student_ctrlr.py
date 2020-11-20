@@ -67,6 +67,10 @@ class StudentController(commands.Cog):
 
     @commands.command('existe')
     async def student_exists(self, ctx):
+        """
+        Verifica se um ID Discord existe no banco de dados ou não.\n
+        Sintaxe: >>existe 263169934543028225
+        """
         exists = self.stdao.find(split_args(ctx.message.content), exists=True)
 
         if exists:
@@ -76,6 +80,10 @@ class StudentController(commands.Cog):
 
     @commands.command('visualizar')
     async def view_self(self, ctx):
+        """
+        Verifica se a pessoa que invocou o comando está cadastrada no banco de dados.\n
+        Se sim, então os dados da pessoa são mostrados.
+        """
         cur_student = self.stdao.find_by_discord_id(ctx.author.id)
         if cur_student is None:
             await ctx.send("Você não está cadastrado.")

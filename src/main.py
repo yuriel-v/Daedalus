@@ -14,32 +14,49 @@ Contanto que me dê o crédito, claro.
 
 # Essenciais
 from discord.ext import commands
+from roger import Roger
 from secret import daedalus_token
+from sqlalchemy.orm import close_all_sessions
 
 # Imports de módulos customizados
 from misc import Misc, split_args
 from games import Games
 from student_ctrlr import StudentController
 
+# Por algum motivo, causa, razão ou circunstância, se esses imports não
+# forem feitos, o sistema não mapeia os objetos.
+from model.student import Student
+from model.subject import Subject
+from model.assigned import Assigned
+from model.registered import Registered
+
 # Inicialização
 bot = commands.Bot(command_prefix=['>>', 'Roger '])
 bot.add_cog(Misc(bot))
 bot.add_cog(Games(bot))
+bot.add_cog(Roger(bot))
 bot.add_cog(StudentController(bot))
 
 
-# Hello, WARUDO!!
 @bot.command()
 async def hello(ctx):
+    """Hello, WARUDO!!"""
     await ctx.send(f"Hello, {ctx.author.name}.")
 
 
-# Contar quantos argumentos foram passados
 @bot.command()
 async def argcount(ctx):
+    """Conta quantos argumentos foram passados (separados por espaço)"""
     arguments = split_args(ctx.message.content)
     await ctx.send(f"Arguments passed: {len(arguments)}\nArguments: {arguments}")
 
+
+@bot.command()
+async def listroles(ctx):
+    """Lista as roles do usuário."""
+    await ctx.send(f"Suas roles: `{[r.name for r in ctx.author.roles if r.name != '@everyone']}`")
+
 # Aqui é só a parte de rodar e terminar o bot.
 bot.run(daedalus_token)
+close_all_sessions()
 print('Bye')
