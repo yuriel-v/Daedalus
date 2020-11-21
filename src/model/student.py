@@ -15,14 +15,3 @@ class Student(Base):
 
     is_assigned = relationship('Assigned', back_populates='student')
     registered_on = relationship('Registered', back_populates='student')
-
-    def __repr__(self):
-        return f'Student(id={self.id}, name={self.name}, registry={self.registry}'
-
-    def name_yourself(self, classes):
-        reply = ['```\n']
-        reply.extend([
-            f'Nome: {self.name} | Matrícula: {self.registry}\n',
-            f'Matérias: {", ".join(classes)}\n```'
-        ])
-        return ''.join(reply)

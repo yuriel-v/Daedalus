@@ -16,6 +16,3 @@ class Registered(Base):
 
     student = relationship('Student', back_populates='registered_on')
     subject = relationship('Subject', back_populates='registered_by')
-
-    def __repr__(self):
-        return f'Registered(std_id={self.std_id}, sbj_id={self.sbj_id}, semester={self.semester}'

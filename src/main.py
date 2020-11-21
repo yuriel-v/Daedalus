@@ -18,7 +18,7 @@ from secret import daedalus_token
 from sqlalchemy.orm import close_all_sessions
 
 # Imports de módulos customizados
-from controller.misc import Misc, split_args
+from controller.misc import Misc, split_args, arg_types
 from controller.games import Games
 from controller.student import StudentController
 from controller.roger import Roger
@@ -48,7 +48,7 @@ async def hello(ctx):
 async def argcount(ctx):
     """Conta quantos argumentos foram passados (separados por espaço)"""
     arguments = split_args(ctx.message.content)
-    await ctx.send(f"Arguments passed: {len(arguments)}\nArguments: {arguments}")
+    await ctx.send(f"Arguments passed: {len(arguments)}\nArguments: {arg_types(arguments, repr=True)}")
 
 
 @bot.command()
