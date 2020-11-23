@@ -13,8 +13,8 @@ Contanto que me dê o crédito, claro.
 """
 
 # Essenciais
+from os import getenv
 from discord.ext import commands
-from secret import daedalus_token
 from sqlalchemy.orm import close_all_sessions
 
 # Imports de módulos customizados
@@ -31,6 +31,7 @@ from model.assigned import Assigned
 from model.registered import Registered
 
 # Inicialização
+daedalus_token = getenv("DAEDALUS_TOKEN")
 bot = commands.Bot(command_prefix=['>>', 'Roger '])
 bot.add_cog(Misc(bot))
 bot.add_cog(Games(bot))
@@ -41,7 +42,7 @@ bot.add_cog(StudentController(bot))
 @bot.command()
 async def hello(ctx):
     """Hello, WARUDO!!"""
-    await ctx.send(f"Hello, {ctx.author.name}.")
+    await ctx.send(f"Hello, {ctx.author.name} - or should I call you {ctx.author.nick}? Either way, hello.")
 
 
 @bot.command()

@@ -5,31 +5,42 @@ from dao import smkr
 
 class StudentDao:
     def insert(self, discord_id: int, name: str, registry: int):
-        session = smkr()
-        session.add(Student(name=name, registry=registry, discord_id=discord_id))
-        session.commit()
-        session.close()
+        # integrity checks
+        if len(name) == 0 or ' ' not in name or registry < 2000000000:
+            return 1
+        else:
+            session = smkr()
+            try:
+                session.add(Student(name=name, registry=registry, discord_id=discord_id))
+                session.commit()
+            except Exception as e:
+                print(f"Exception caught on StudentDao: {e}")
+            finally:
+                session.close()
 
     def find(self, filter: list, exists=False):
-        session = smkr()
-        q = None
-
-        if exists:
-            q = session.query(Student).filter(Student.discord_id == int(filter[0]))
-            return session.query(literal(True)).filter(q.exists()).scalar()
-
-        elif str(filter[0]).isnumeric():
-            q = session.query(Student).filter(Student.registry == int(filter[0]))
+        if len(filter) == 0:
+            return None
         else:
-            q = session.query(Student).filter(Student.name.like(f'%{" ".join(filter)}%'))
+            session = smkr()
+            q = None
 
-        return q.all()
+            if exists:
+                q = session.query(Student).filter(Student.discord_id == int(filter[0]))
+                return session.query(literal(True)).filter(q.exists()).scalar()
 
-    def find_by_discord_id(self, discord_id):
+            elif str(filter[0]).isnumeric():
+                q = session.query(Student).filter(Student.registry == int(filter[0]))
+            else:
+                q = session.query(Student).filter(Student.name.like(f'%{" ".join(filter)}%'))
+
+            return q.all()
+
+    def find_by_discord_id(self, discord_id: int):
         session = smkr()
         return session.query(Student).filter(Student.discord_id == discord_id).first()
 
-    def update(self, discord_id, name=None, registry=None):
+    def update(self, discord_id: int, name=None, registry=None):
         session = smkr()
         cur_student = session.query(Student).filter(Student.discord_id == discord_id).first()
 

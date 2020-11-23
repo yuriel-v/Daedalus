@@ -3,6 +3,8 @@ from typing import Iterable
 from discord.ext import commands
 from sys import getsizeof
 
+debug = True
+
 
 def split_args(arguments):
     arguments = arguments.split(' ')
@@ -26,6 +28,11 @@ def arg_types(arguments: Iterable, repr=False):
         return arg_with_types
     else:
         return f"{{\n  Strings: `{arg_with_types.get(2)}`\n  Integers: `{arg_with_types.get(1)}`\n  Floats: `{arg_with_types.get(0)}`\n}}"
+
+
+def dprint(message):
+    if debug:
+        print(message)
 
 
 class Misc(commands.Cog):
