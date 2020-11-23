@@ -37,7 +37,7 @@ class Roger(commands.Cog):
         if ctx.prefix != 'Roger ':
             return
 
-        roger_pics = [f for f in listdir('./roger') if isfile(join('./roger', f))]
+        roger_pics = [f for f in listdir('.src/roger') if isfile(join('.src/roger', f))]
         fn = str(roger_pics[randint(0, len(roger_pics) - 1)])
         pic = File(f'./roger/{fn}', fn)
         embed = Embed(description=fn, colour=Colour(randint(0x000000, 0xFFFFFF)))
