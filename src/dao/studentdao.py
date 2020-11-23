@@ -6,7 +6,7 @@ from dao import smkr
 class StudentDao:
     def insert(self, discord_id: int, name: str, registry: int):
         # integrity checks
-        if len(name) == 0 or ' ' not in name or registry < 2000000000:
+        if len(name) == 0 or ' ' not in name or int(registry) < 2000000000:
             return 1
         else:
             session = smkr()
