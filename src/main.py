@@ -57,6 +57,11 @@ async def listroles(ctx):
     """Lista as roles do usuário."""
     await ctx.send(f"Suas roles: `{[r.name for r in ctx.author.roles if r.name != '@everyone']}`")
 
+
+@bot.command('tolog')
+async def tolog(ctx):
+    print(split_args(ctx.message.content))
+
 # Aqui é só a parte de rodar e terminar o bot.
 bot.run(daedalus_token)
 close_all_sessions()
