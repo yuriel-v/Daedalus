@@ -26,16 +26,17 @@ class StudentController(commands.Cog):
         """
 
         arguments = split_args(ctx.message.content)
-        if self.stdao.find([ctx.author.id], exists=True):
-            await ctx.send("Você já está cadastrado.")
-
-        elif len(arguments) < 2 or not str(arguments[0]).isnumeric():
+        if len(arguments) < 2 or not str(arguments[0]).isnumeric():
             await ctx.send("Sintaxe inválida. Exemplo: `>>cadastrar 2020123456 Celso Souza`.")
 
         else:
-            self.stdao.insert(name=' '.join(arguments[1::]), registry=arguments[0], discord_id=ctx.author.id)
-            if self.stdao.find([ctx.author.id], exists=True):
+            re = self.stdao.insert(name=' '.join(arguments[1::]), registry=arguments[0], discord_id=ctx.author.id)
+            if re == 0:
                 await ctx.send("Cadastro realizado com sucesso.")
+            elif re == 1:
+                await ctx.send("Sintaxe inválida. Exemplo: `>>cadastrar 2020123456 Celso Souza`.")
+            elif re == 2:
+                await ctx.send("Você já está cadastrado.")
             else:
                 await ctx.send("Algo deu errado - cadastro não realizado.")
 
