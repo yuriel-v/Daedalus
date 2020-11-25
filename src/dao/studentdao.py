@@ -11,7 +11,7 @@ class StudentDao:
         retval = None
         # integrity checks
         try:  # in case some funny asshat decides to put a string as registry
-            if len(name) == 0 or ' ' not in name or int(registry) < 2000000000:
+            if len(name) == 0 or ' ' not in name or (len(str(registry)) != 10 and not str(registry).startswith('20')):
                 retval = 1  # invalid syntax
         except Exception as e:
             print(f"Exception caught on StudentDao: {e}")
@@ -26,6 +26,7 @@ class StudentDao:
                 self.session.expunge_all()
             except Exception as e:
                 print(f"Exception caught on StudentDao: {e}")
+                self.session.rollback()
 
             success = self.find_by_discord_id(discord_id) is not None
             if success:

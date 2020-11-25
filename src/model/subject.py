@@ -14,3 +14,6 @@ class Subject(Base):
 
     assigned_to = relationship('Assigned', back_populates='subject')
     registered_by = relationship('Registered', back_populates='subject')
+
+    def __str__(self):
+        return f"Código: {self.code} | Matéria: {self.fullname}"

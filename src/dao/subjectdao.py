@@ -9,20 +9,23 @@ class SubjectDao:
 
     def insert(self, code: str, fullname: str):
         if len(code) != 3 or len(fullname) == 0:
-            return 1
+            return 1  # invalid data
         else:
             try:
                 self.session.add(Subject(code=code.upper(), fullname=fullname))
                 self.session.commit()
+                self.session.expunge_all()
+                return 0  # success
             except Exception as e:
                 print(f"Exception caught on SubjectDao: {e}")
-            finally:
-                self.session.expunge_all()
+                self.session.rollback()
+                return 2  # ???
 
     def find(self, filter: str, exists=False):
         if len(filter) == 0:
             return None
         else:
+            q = None
             try:
                 q = self.session.query(Subject)
                 if len(filter) <= 3:
@@ -31,17 +34,28 @@ class SubjectDao:
                     q = q.filter(Subject.fullname.ilike(f'%{filter}%'))
 
                 if exists:
-                    return self.session.query(literal(True)).filter(q.exists()).scalar()
+                    q = self.session.query(literal(True)).filter(q.exists()).scalar()
                 else:
-                    return q.all()
+                    q = q.all()
 
             except Exception as e:
+                q = None
                 print(f"Exception caught on SubjectDao: {e}")
+
+            finally:
+                self.session.rollback()
+            return q
+
+    def find_all(self):
+        res = self.session.query(Subject).all()
+        self.session.rollback()
+        return res
 
     def update(self, code: str, newcode=None, fullname=None):
         if newcode is None and fullname is None:
             return 1  # invalid syntax
         else:
+            retval = None
             try:
                 cur_sbj = self.find(code.upper())
                 if len(cur_sbj) == 0:
@@ -56,8 +70,12 @@ class SubjectDao:
 
                 self.session.add(cur_sbj)
                 self.session.commit()
+                retval = 0  # success
 
             except Exception as e:
+                self.session.rollback()
                 print(f"Exception caught on SubjectDao: {e}")
+                retval = 3  # ???
             finally:
                 self.session.expunge_all()
+            return retval

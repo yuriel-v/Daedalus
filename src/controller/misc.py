@@ -59,7 +59,7 @@ def smoothen(message):
         formatted_message += '| ' + str(message) + ' |\n'
     else:
         for string in message:
-            formatted_message += '| ' + str(string) + ' |\n'
+            formatted_message += '| ' + str(string) + f"{' ' * (dashes - 1 - len(string))}|\n"
 
     formatted_message += '+' + ('-' * dashes) + '+\n```'
     return formatted_message
