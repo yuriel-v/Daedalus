@@ -4,32 +4,30 @@ from dao import smkr
 
 
 class StudentDao:
+    def __init__(self):
+        self.session = smkr()
+
     def insert(self, discord_id: str, name: str, registry: int):
-        session = smkr()
         retval = None
         # integrity checks
         try:  # in case some funny asshat decides to put a string as registry
             if len(name) == 0 or ' ' not in name or int(registry) < 2000000000:
-                session.close()
                 retval = 1  # invalid syntax
         except Exception as e:
             print(f"Exception caught on StudentDao: {e}")
-            session.close()
             return 1
 
-        if self.find_by_discord_id(discord_id, session) is not None:
-            session.close()
+        if self.find_by_discord_id(discord_id) is not None:
             retval = 2  # user exists
         else:
             try:
-                session.add(Student(name=name, registry=registry, discord_id=discord_id))
-                session.commit()
-                session.expunge_all()
+                self.session.add(Student(name=name, registry=registry, discord_id=discord_id))
+                self.session.commit()
+                self.session.expunge_all()
             except Exception as e:
                 print(f"Exception caught on StudentDao: {e}")
 
-            success = self.find_by_discord_id(discord_id, session) is not None
-            session.close()
+            success = self.find_by_discord_id(discord_id) is not None
             if success:
                 retval = 0
             else:
@@ -40,42 +38,33 @@ class StudentDao:
         if len(filter) == 0:
             return None
         else:
-            session = smkr()
             q = None
 
             if exists:
-                q = session.query(Student).filter(Student.discord_id == int(filter[0]))
-                return session.query(literal(True)).filter(q.exists()).scalar()
+                q = self.session.query(Student).filter(Student.discord_id == int(filter[0]))
+                return self.session.query(literal(True)).filter(q.exists()).scalar()
 
             elif str(filter[0]).isnumeric():
-                q = session.query(Student).filter(Student.registry == int(filter[0]))
+                q = self.session.query(Student).filter(Student.registry == int(filter[0]))
             else:
-                q = session.query(Student).filter(Student.name.like(f'%{" ".join(filter)}%'))
+                q = self.session.query(Student).filter(Student.name.ilike(f'%{" ".join(filter)}%'))
 
             q = q.all()
-            session.close()
+            self.session.rollback()
             return q
 
-    def find_by_discord_id(self, discord_id: int, session=None):
-        inherited_session = True
-        if session is None:
-            session = smkr()
-            inherited_session = False
-
-        q = session.query(Student).filter(Student.discord_id == discord_id).first()
-
-        if not inherited_session:
-            session.close()
+    def find_by_discord_id(self, discord_id: int):
+        q = self.session.query(Student).filter(Student.discord_id == discord_id).first()
+        self.session.rollback()
         return q
 
     def update(self, discord_id: int, name=None, registry=None):
-        session = smkr()
-        cur_student = session.query(Student).filter(Student.discord_id == discord_id).first()
+        cur_student = self.session.query(Student).filter(Student.discord_id == discord_id).first()
 
         if cur_student is None:
             return 1
         else:
-            session.add(cur_student)
+            self.session.add(cur_student)
 
         if name is not None:
             cur_student.name = name
@@ -83,8 +72,8 @@ class StudentDao:
         if registry is not None:
             cur_student.registry = registry
 
-        if len(session.dirty) > 0:
-            session.commit()
+        if len(self.session.dirty) > 0:
+            self.session.commit()
 
-        session.close()
+        self.session.expunge_all()
         return 0

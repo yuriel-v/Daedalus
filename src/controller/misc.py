@@ -6,12 +6,19 @@ from sys import getsizeof
 debug = True
 
 
-def split_args(arguments):
+def split_args(arguments, prefixed=False, islist=True):
     arguments = arguments.split(' ')
-    if arguments[0] == 'Roger ':
+    if arguments[0] == 'Roger':
         arguments.pop(0)
+
+    if (arguments[0].endswith('st') or arguments[0].endswith('mt')) and prefixed:
+        arguments.pop(1)
+
     arguments.pop(0)
-    return arguments
+    if islist:
+        return arguments
+    else:
+        return ' '.join(arguments)
 
 
 def arg_types(arguments: Iterable, repr=False):
@@ -33,6 +40,29 @@ def arg_types(arguments: Iterable, repr=False):
 def dprint(message):
     if debug:
         print(message)
+
+
+def smoothen(message):
+    dashes = None
+    if isinstance(message, list) or isinstance(message, tuple) or isinstance(message, set):
+        dashes = len(max(message, key=len))
+    elif isinstance(message, dict):
+        message = (x for x in message.values())
+        dashes = len(max(message, key=len))
+    else:
+        message = str(message)
+        dashes = len(message)
+    dashes += 2
+
+    formatted_message = '```\n+' + ('-' * dashes) + '+\n'
+    if isinstance(message, str):
+        formatted_message += '| ' + str(message) + ' |\n'
+    else:
+        for string in message:
+            formatted_message += '| ' + str(string) + ' |\n'
+
+    formatted_message += '+' + ('-' * dashes) + '+\n```'
+    return formatted_message
 
 
 class Misc(commands.Cog):

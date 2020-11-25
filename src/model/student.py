@@ -15,3 +15,6 @@ class Student(Base):
 
     is_assigned = relationship('Assigned', back_populates='student')
     registered_on = relationship('Registered', back_populates='student')
+
+    def __str__(self):
+        return f"Matrícula: {self.registry} | Nome: {self.name}"

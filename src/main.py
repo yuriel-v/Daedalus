@@ -16,9 +16,11 @@ Contanto que me dê o crédito, claro.
 from os import getenv
 from discord.ext import commands
 from sqlalchemy.orm import close_all_sessions
+from dao import engin
+from model import initialize_sql
 
 # Imports de módulos customizados
-from controller.misc import Misc, split_args, arg_types
+from controller.misc import Misc, split_args, arg_types, smoothen
 from controller.games import Games
 from controller.student import StudentController
 from controller.roger import Roger
@@ -37,6 +39,7 @@ bot.add_cog(Misc(bot))
 bot.add_cog(Games(bot))
 bot.add_cog(Roger(bot))
 bot.add_cog(StudentController(bot))
+initialize_sql(engin)
 
 
 @bot.command()
@@ -49,7 +52,7 @@ async def hello(ctx):
 async def argcount(ctx):
     """Conta quantos argumentos foram passados (separados por espaço)"""
     arguments = split_args(ctx.message.content)
-    await ctx.send(f"Arguments passed: {len(arguments)}\nArguments: {arg_types(arguments, repr=True)}")
+    await ctx.send(f"Arguments passed: {len(arguments)}\nArguments themselves: `{arguments}`\nArgument classes: {arg_types(arguments, repr=True)}")
 
 
 @bot.command()
@@ -58,9 +61,14 @@ async def listroles(ctx):
     await ctx.send(f"Suas roles: `{[r.name for r in ctx.author.roles if r.name != '@everyone']}`")
 
 
-@bot.command('tolog')
+@bot.command('log')
 async def tolog(ctx):
     print(split_args(ctx.message.content))
+
+
+@bot.command('fmt')
+async def fmt(ctx):
+    await ctx.send(smoothen(split_args(ctx.message.content, islist=False)))
 
 # Aqui é só a parte de rodar e terminar o bot.
 bot.run(daedalus_token)

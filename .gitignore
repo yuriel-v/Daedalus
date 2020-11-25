@@ -1,5 +1,9 @@
 # Bot secrets
 src/database/
+env/
+
+# VS Code
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
