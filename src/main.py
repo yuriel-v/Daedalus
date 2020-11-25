@@ -41,6 +41,14 @@ bot.add_cog(Roger(bot))
 bot.add_cog(StudentController(bot))
 initialize_sql(engin)
 
+daedalus_version = '0.3.10'
+daedalus_environment = getenv("DAEDALUS_ENV")
+
+
+@bot.command('version')
+async def show_version(ctx):
+    await ctx.send(f"Project Daedalus v{daedalus_version} ({daedalus_environment})")
+
 
 @bot.command()
 async def hello(ctx):
@@ -50,14 +58,12 @@ async def hello(ctx):
 
 @bot.command()
 async def argcount(ctx):
-    """Conta quantos argumentos foram passados (separados por espaço)"""
     arguments = split_args(ctx.message.content)
     await ctx.send(f"Arguments passed: {len(arguments)}\nArguments themselves: `{arguments}`\nArgument classes: {arg_types(arguments, repr=True)}")
 
 
 @bot.command()
 async def listroles(ctx):
-    """Lista as roles do usuário."""
     await ctx.send(f"Suas roles: `{[r.name for r in ctx.author.roles if r.name != '@everyone']}`")
 
 

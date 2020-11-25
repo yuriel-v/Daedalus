@@ -28,9 +28,11 @@ class StudentController(commands.Cog):
 
     async def add_student(self, ctx: commands.Context):
         """
-        Cadastra o usuário que invocou o comando.\n
-        Sintaxe: >>st cadastrar matricula nome completo\n
-        Ex.: >>st cadastrar 2020123456 Celso Souza
+        Cadastra o usuário que invocou o comando.
+
+        Sintaxe: `st cadastrar matricula nome completo`
+
+        Ex.: `st cadastrar 2020123456 Celso Souza`
 
         O sistema não permite o cadastro de um usuário já cadastrado.
         """
@@ -44,7 +46,7 @@ class StudentController(commands.Cog):
             if re == 0:
                 await ctx.send("Cadastro realizado com sucesso.")
             elif re == 1:
-                await ctx.send("Sintaxe inválida. Exemplo: `>>cadastrar 2020123456 Celso Souza`.")
+                await ctx.send("Sintaxe inválida. Exemplo: `>>st cadastrar 2020123456 Celso Souza`.")
             elif re == 2:
                 await ctx.send("Você já está cadastrado.")
             else:
@@ -53,9 +55,11 @@ class StudentController(commands.Cog):
     async def check_student(self, ctx: commands.Context):
         """
         Busca os dados de um estudante.
-        Sintaxe: >>st buscar filtro
         O 'filtro' pode ser uma matrícula (numérica) ou um nome (string).
-        Ex.: >>st buscar 2019123456
+
+        Sintaxe: `st buscar filtro`
+
+        Ex.: `st buscar 2019123456`
         """
 
         arguments = split_args(ctx.message.content, prefixed=True)
@@ -74,8 +78,9 @@ class StudentController(commands.Cog):
 
     async def student_exists(self, ctx: commands.Context):
         """
-        Verifica se um ID Discord existe no banco de dados ou não.\n
-        Sintaxe: >>existe 263169934543028225
+        Verifica se um ID Discord existe no banco de dados ou não.
+
+        Sintaxe: `existe 263169934543028225`
         """
         exists = self.stdao.find(split_args(ctx.message.content, prefixed=True), exists=True)
 
@@ -86,7 +91,7 @@ class StudentController(commands.Cog):
 
     async def view_self(self, ctx: commands.Context):
         """
-        Verifica se a pessoa que invocou o comando está cadastrada no banco de dados.\n
+        Verifica se a pessoa que invocou o comando está cadastrada no banco de dados.
         Se sim, então os dados da pessoa são mostrados.
         """
         cur_student = self.stdao.find_by_discord_id(ctx.author.id)
@@ -98,13 +103,14 @@ class StudentController(commands.Cog):
     async def edit_student(self, ctx: commands.Context):
         """
         Edita o cadastro do usuário que invocou o comando.
-        Sintaxe: >>editar campo novo valor
         O 'campo' pode ser 'nome' ou 'mtr' (matrícula).
+
+        Sintaxe: `editar campo novo valor`
         """
 
         arguments = split_args(ctx.message.content, prefixed=True)
         if len(arguments) < 2:
-            await ctx.send("Sintaxe inválida. Exemplo: `>>st editar mtr 2019246852` ou `>>editar nome Carlos Eduardo`.")
+            await ctx.send("Sintaxe inválida. Exemplo: `>>st editar mtr 2019246852` ou `>>st editar nome Carlos Eduardo`.")
             return
 
         res = None

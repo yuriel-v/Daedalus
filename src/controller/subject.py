@@ -14,4 +14,4 @@ class SubjectController(commands.Cog):
     @commands.command('mt')
     async def subject_controller(self, ctx: commands.Context):
         if ctx.author.id != getenv("DAEDALUS_OWNERID"):
-            await ctx.send("Só o proprietário do bot pode utilizar os comandos iniciados por `mt`.")
+            await ctx.send("Somente o proprietário do bot pode utilizar os comandos iniciados por `mt`.")
