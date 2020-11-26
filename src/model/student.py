@@ -13,8 +13,8 @@ class Student(Base):
     registry = Column(Integer)          # matrícula
     discord_id = Column(BigInteger, nullable=False, unique=True)
 
-    is_assigned = relationship('Assigned', back_populates='student')
-    registered_on = relationship('Registered', back_populates='student')
+    is_assigned = relationship('Assigned', back_populates='student', cascade="all, delete-orphan")
+    registered_on = relationship('Registered', back_populates='student', cascade="all, delete-orphan")
 
     def __str__(self):
         return f"Matrícula: {self.registry} | Nome: {self.name}"

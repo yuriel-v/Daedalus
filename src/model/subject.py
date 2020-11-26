@@ -13,8 +13,8 @@ class Subject(Base):
     fullname = Column(String)           # Nome completo da matéria, por exemplo 'Banco de Dados II'
     semester = Column(Integer, nullable=False)
 
-    assigned_to = relationship('Assigned', back_populates='subject')
-    registered_by = relationship('Registered', back_populates='subject')
+    assigned_to = relationship('Assigned', back_populates='subject', cascade="all, delete-orphan")
+    registered_by = relationship('Registered', back_populates='subject', cascade="all, delete-orphan")
 
     def __str__(self):
         sem = ""

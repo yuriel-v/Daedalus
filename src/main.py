@@ -43,7 +43,7 @@ bot.add_cog(StudentController(bot))
 bot.add_cog(SubjectController(bot))
 initialize_sql(engin)
 
-daedalus_version = '0.4.1'
+daedalus_version = '0.4.2'
 daedalus_environment = getenv("DAEDALUS_ENV")
 
 

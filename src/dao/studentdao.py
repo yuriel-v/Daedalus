@@ -58,6 +58,10 @@ class StudentDao:
         self.session.rollback()
         return self.session.query(Student).filter(Student.discord_id == discord_id).first()
 
+    def find_all(self):
+        self.session.rollback()
+        return self.session.query(Student).all()
+
     def update(self, discord_id: int, name=None, registry=None):
         self.session.rollback()
         cur_student = self.session.query(Student).filter(Student.discord_id == discord_id).first()
@@ -78,3 +82,16 @@ class StudentDao:
 
         self.session.expunge_all()
         return 0
+
+    def delete(self, discord_id: int):
+        self.session.rollback()
+
+        try:
+            d = self.session.query(Student).filter(Student.discord_id == discord_id)
+            d.delete(synchronize_session=False)
+            self.session.commit()
+            return 0
+        except Exception as e:
+            self.session.rollback()
+            print(f"Exception caught: {e}")
+            return 1

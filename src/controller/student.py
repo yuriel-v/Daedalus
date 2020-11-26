@@ -23,6 +23,8 @@ class StudentController(commands.Cog):
             await self.view_self(ctx)
         elif command == "editar":
             await self.edit_student(ctx)
+        elif command == "excluir":
+            await self.delete_student(ctx)
         else:
             dprint(f"Ignoring unknown command: '{command}'")
 
@@ -67,14 +69,32 @@ class StudentController(commands.Cog):
             await ctx.send("Sintaxe inválida. Exemplo: `>>st buscar 2019123456` (matrícula) ou `>>st buscar João Carlos`.")
             return
 
-        q = self.stdao.find(arguments)
+        q = None
+        comedias = False
+        roger = False
+
+        if "roger" in arguments[0].lower():
+            roger = True
+        if arguments[0].lower().startswith("comédia"):
+            q = self.stdao.find_all()
+            comedias = True
+        elif arguments[0].lower() == "todos":
+            q = self.stdao.find_all()
+        else:
+            q = self.stdao.find(arguments)
 
         if len(q) == 0:
             await ctx.send("Estudante não encontrado.")
             return
         else:
-            results = "Encontrado(s): " + smoothen(q)
-            await ctx.send(results)
+            results = ""
+            if comedias:
+                results = "Os comédia dessa porra:"
+            elif roger:
+                results = "O divino meme em charme e osso:"
+            else:
+                results = "Encontrado(s):"
+            await ctx.send(results + smoothen(q))
 
     async def student_exists(self, ctx: commands.Context):
         """
@@ -133,3 +153,9 @@ class StudentController(commands.Cog):
             cur_student = self.stdao.find_by_discord_id(ctx.author.id)
             reply += smoothen(str(cur_student))
             await ctx.send(reply)
+
+    async def delete_student(self, ctx: commands.Context):
+        if self.stdao.delete(ctx.author.id) == 0:
+            await ctx.send("O seu cadastro foi excluído com sucesso.")
+        else:
+            await ctx.send("Alguma coisa deu errado. Consulte o log para detalhes.")
