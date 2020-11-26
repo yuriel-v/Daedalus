@@ -8,6 +8,7 @@ class StudentDao:
         self.session = smkr()
 
     def insert(self, discord_id: str, name: str, registry: int):
+        self.session.rollback()
         retval = None
         # integrity checks
         try:  # in case some funny asshat decides to put a string as registry
@@ -36,6 +37,7 @@ class StudentDao:
         return retval
 
     def find(self, filter: list, exists=False):
+        self.session.rollback()
         if len(filter) == 0:
             return None
         else:
@@ -50,16 +52,14 @@ class StudentDao:
             else:
                 q = self.session.query(Student).filter(Student.name.ilike(f'%{" ".join(filter)}%'))
 
-            q = q.all()
-            self.session.rollback()
-            return q
+            return q.all()
 
     def find_by_discord_id(self, discord_id: int):
-        q = self.session.query(Student).filter(Student.discord_id == discord_id).first()
         self.session.rollback()
-        return q
+        return self.session.query(Student).filter(Student.discord_id == discord_id).first()
 
     def update(self, discord_id: int, name=None, registry=None):
+        self.session.rollback()
         cur_student = self.session.query(Student).filter(Student.discord_id == discord_id).first()
 
         if cur_student is None:

@@ -45,9 +45,10 @@ def dprint(message):
 def smoothen(message):
     dashes = None
     if isinstance(message, list) or isinstance(message, tuple) or isinstance(message, set):
+        message = [str(x) for x in message]
         dashes = len(max(message, key=len))
     elif isinstance(message, dict):
-        message = (x for x in message.values())
+        message = [str(x) for x in message.values()]
         dashes = len(max(message, key=len))
     else:
         message = str(message)
@@ -56,10 +57,10 @@ def smoothen(message):
 
     formatted_message = '```\n+' + ('-' * dashes) + '+\n'
     if isinstance(message, str):
-        formatted_message += '| ' + str(message) + ' |\n'
+        formatted_message += f'| {message} |\n'
     else:
         for string in message:
-            formatted_message += '| ' + str(string) + f"{' ' * (dashes - 1 - len(string))}|\n"
+            formatted_message += '| ' + string + f"{' ' * (dashes - 1 - len(string))}|\n"
 
     formatted_message += '+' + ('-' * dashes) + '+\n```'
     return formatted_message
