@@ -16,6 +16,7 @@ Contanto que me dê o crédito, claro.
 from os import getenv
 from discord.ext import commands
 from sqlalchemy.orm import close_all_sessions
+from controller.subject import SubjectController
 from dao import engin
 from model import initialize_sql
 
@@ -39,9 +40,10 @@ bot.add_cog(Misc(bot))
 bot.add_cog(Games(bot))
 bot.add_cog(Roger(bot))
 bot.add_cog(StudentController(bot))
+bot.add_cog(SubjectController(bot))
 initialize_sql(engin)
 
-daedalus_version = '0.3.10'
+daedalus_version = '0.3.11'
 daedalus_environment = getenv("DAEDALUS_ENV")
 
 

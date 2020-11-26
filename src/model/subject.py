@@ -11,6 +11,15 @@ class Subject(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(String, unique=True)  # Código da matéria, por exemplo 'BD2' para banco de dados II
     fullname = Column(String)           # Nome completo da matéria, por exemplo 'Banco de Dados II'
+    semester = Column(Integer, nullable=False)
 
     assigned_to = relationship('Assigned', back_populates='subject')
     registered_by = relationship('Registered', back_populates='subject')
+
+    def __str__(self):
+        sem = ""
+        if int(self.semester) == 0:
+            sem = "Elo"
+        else:
+            sem = str(self.semester)
+        return f"Semestre: {sem} | Código: {self.code} | Matéria: {self.fullname}"

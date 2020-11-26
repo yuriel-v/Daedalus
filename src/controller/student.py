@@ -11,7 +11,7 @@ class StudentController(commands.Cog):
 
     @commands.command('st')
     async def student_controller(self, ctx: commands.Context):
-        command = next(iter(split_args(ctx.message.content)), "")
+        command = next(iter(split_args(ctx.message.content)), "").lower()
 
         if command == "cadastrar":
             await self.add_student(ctx)
