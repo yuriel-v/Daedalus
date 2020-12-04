@@ -1,12 +1,12 @@
 # Módulo de sei lá o quê. Utilidades em geral. E memes.
-from typing import Iterable
+from typing import Iterable, Union
 from discord.ext import commands
 from sys import getsizeof
 
 debug = True
 
 
-def split_args(arguments, prefixed=False, islist=True):
+def split_args(arguments: str, prefixed=False, islist=True):
     arguments = arguments.split(' ')
     if arguments[0] == 'Roger':
         arguments.pop(0)
@@ -37,14 +37,13 @@ def arg_types(arguments: Iterable, repr=False):
         return f"{{\n  Strings: `{arg_with_types.get(2)}`\n  Integers: `{arg_with_types.get(1)}`\n  Floats: `{arg_with_types.get(0)}`\n}}"
 
 
-def dprint(message):
+def dprint(message: str):
     if debug:
         print(message)
 
 
-def smoothen(message):
-    dashes = None
-    if isinstance(message, list) or isinstance(message, tuple) or isinstance(message, set):
+def smoothen(message: Iterable, complement=False):
+    if isinstance(message, Union[list, tuple, set].__args__):
         message = [str(x) for x in message]
         dashes = len(max(message, key=len))
     elif isinstance(message, dict):
@@ -55,14 +54,14 @@ def smoothen(message):
         dashes = len(message)
     dashes += 2
 
-    formatted_message = '```\n+' + ('-' * dashes) + '+\n'
+    formatted_message = (lambda: f'\n+{"-" * dashes}+\n' if not complement else "")()
     if isinstance(message, str):
         formatted_message += f'| {message} |\n'
     else:
         for string in message:
-            formatted_message += '| ' + string + f"{' ' * (dashes - 1 - len(string))}|\n"
+            formatted_message += f'| {string}{" " * (dashes - 1 - len(string))}|\n'
 
-    formatted_message += '+' + ('-' * dashes) + '+\n```'
+    formatted_message += f'\n+{"-" * dashes}+\n'
     return formatted_message
 
 
@@ -73,31 +72,23 @@ class Misc(commands.Cog):
     # Texto com ÊNFASE!!
     @commands.command()
     async def emphasize(self, ctx):
-        start = 1
-        if ctx.prefix == 'Roger ':
-            start = 2
-        await ctx.send(f"**{' '.join(ctx.message.content.split(' ')[start::]).upper()}!!**")
+        await ctx.send(f"**{split_args(ctx.message.content, islist=False).upper()}!!**")
 
     # Texto em código
     @commands.command(name='code')
     async def text_code(self, ctx):
-        start = 1
-        if ctx.prefix == 'Roger ':
-            start = 2
-        reply = []
-        reply.extend([
+        reply = ''.join([
             "```\n",
-            ' '.join(ctx.message.content.split(' ')[start::]),
+            split_args(ctx.message.content, islist=False),
             "\n```"
         ])
-        reply = ''.join(reply)
         await ctx.send(reply)
 
     # Tamanho em bytes do valor digitado
     @commands.command('sizeof')
     async def sizeof_value(self, ctx):
         args = split_args(ctx.message.content)
-        if len(args) == 0:
+        if not args:
             await ctx.send("Sintaxe: `>>sizeof numero`")
         elif not str(args[0]).isnumeric():
             await ctx.send("Sintaxe: `>>sizeof numero`")

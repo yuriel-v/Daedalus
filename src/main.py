@@ -71,12 +71,12 @@ async def listroles(ctx):
 
 @bot.command('log')
 async def tolog(ctx):
-    print(split_args(ctx.message.content))
+    print(split_args(ctx.message.content, islist=False))
 
 
 @bot.command('fmt')
 async def fmt(ctx):
-    await ctx.send(smoothen(split_args(ctx.message.content, islist=False)))
+    await ctx.send(f"```{smoothen(split_args(ctx.message.content, islist=False))}```")
 
 # Aqui é só a parte de rodar e terminar o bot.
 bot.run(daedalus_token)

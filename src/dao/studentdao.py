@@ -41,8 +41,6 @@ class StudentDao:
         if len(filter) == 0:
             return None
         else:
-            q = None
-
             if exists:
                 q = self.session.query(Student).filter(Student.discord_id == int(filter[0]))
                 return self.session.query(literal(True)).filter(q.exists()).scalar()

@@ -1,13 +1,12 @@
 # Módulo de controle de estudantes.
 from controller.misc import split_args, dprint, smoothen
-from dao.studentdao import StudentDao
+from dao import stdao
 from discord.ext import commands
 
 
 class StudentController(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.stdao = StudentDao()
 
     @commands.command('st')
     async def student_controller(self, ctx: commands.Context):
@@ -44,7 +43,7 @@ class StudentController(commands.Cog):
             await ctx.send("Sintaxe inválida. Exemplo: `>>st cadastrar 2020123456 Celso Souza`.")
 
         else:
-            re = self.stdao.insert(name=' '.join(arguments[1::]), registry=arguments[0], discord_id=ctx.author.id)
+            re = stdao.insert(name=' '.join(arguments[1::]), registry=arguments[0], discord_id=ctx.author.id)
             if re == 0:
                 await ctx.send("Cadastro realizado com sucesso.")
             elif re == 1:
@@ -76,12 +75,12 @@ class StudentController(commands.Cog):
         if "roger" in arguments[0].lower():
             roger = True
         if arguments[0].lower().startswith("comédia"):
-            q = self.stdao.find_all()
+            q = stdao.find_all()
             comedias = True
         elif arguments[0].lower() == "todos":
-            q = self.stdao.find_all()
+            q = stdao.find_all()
         else:
-            q = self.stdao.find(arguments)
+            q = stdao.find(arguments)
 
         if len(q) == 0:
             await ctx.send("Estudante não encontrado.")
@@ -94,7 +93,7 @@ class StudentController(commands.Cog):
                 results = "O divino meme em charme e osso:"
             else:
                 results = "Encontrado(s):"
-            await ctx.send(results + smoothen(q))
+            await ctx.send(f"{results}```{smoothen(q)}```")
 
     async def student_exists(self, ctx: commands.Context):
         """
@@ -102,7 +101,7 @@ class StudentController(commands.Cog):
 
         Sintaxe: `existe 263169934543028225`
         """
-        exists = self.stdao.find(split_args(ctx.message.content, prefixed=True), exists=True)
+        exists = stdao.find(split_args(ctx.message.content, prefixed=True), exists=True)
 
         if exists:
             await ctx.send("ID existente.")
@@ -114,11 +113,11 @@ class StudentController(commands.Cog):
         Verifica se a pessoa que invocou o comando está cadastrada no banco de dados.
         Se sim, então os dados da pessoa são mostrados.
         """
-        cur_student = self.stdao.find_by_discord_id(ctx.author.id)
+        cur_student = stdao.find_by_discord_id(ctx.author.id)
         if cur_student is None:
             await ctx.send("Você não está cadastrado.")
         else:
-            await ctx.send("Seus dados: " + smoothen(str(cur_student)))
+            await ctx.send(f"Seus dados: ```{smoothen(str(cur_student))}```")
 
     async def edit_student(self, ctx: commands.Context):
         """
@@ -136,10 +135,10 @@ class StudentController(commands.Cog):
         res = None
 
         if str(arguments[0]).lower() == 'nome':
-            res = self.stdao.update(ctx.author.id, name=' '.join(arguments[1::]))
+            res = stdao.update(ctx.author.id, name=' '.join(arguments[1::]))
 
         elif str(arguments[0]).lower() == 'mtr':
-            res = self.stdao.update(ctx.author.id, registry=int(arguments[1]))
+            res = stdao.update(ctx.author.id, registry=int(arguments[1]))
 
         else:
             await ctx.send("Campo inválido - o campo pode ser `nome` ou `mtr`.")
@@ -150,12 +149,12 @@ class StudentController(commands.Cog):
 
         else:
             reply = "Dados alterados."
-            cur_student = self.stdao.find_by_discord_id(ctx.author.id)
-            reply += smoothen(str(cur_student))
+            cur_student = stdao.find_by_discord_id(ctx.author.id)
+            reply += f"```{smoothen(str(cur_student))}```"
             await ctx.send(reply)
 
     async def delete_student(self, ctx: commands.Context):
-        if self.stdao.delete(ctx.author.id) == 0:
+        if stdao.delete(ctx.author.id) == 0:
             await ctx.send("O seu cadastro foi excluído com sucesso.")
         else:
             await ctx.send("Alguma coisa deu errado. Consulte o log para detalhes.")

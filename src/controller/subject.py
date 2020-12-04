@@ -3,13 +3,12 @@
 from os import getenv
 from controller.misc import smoothen, split_args, dprint
 from discord.ext import commands
-from dao.subjectdao import SubjectDao
+from dao import sbdao
 
 
 class SubjectController(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.sbdao = SubjectDao()
         self.read_only_cmds = {'buscar', 'todas'}
 
     @commands.command('mt')
@@ -46,7 +45,7 @@ class SubjectController(commands.Cog):
             await ctx.send("Sintaxe inválida. Exemplo: `>>mt add BD2 4 Banco de Dados II`.")
         else:
             try:
-                ret = self.sbdao.insert(code=arguments[0], fullname=' '.join(arguments[2::]), semester=abs(int(arguments[1])))
+                ret = sbdao.insert(code=arguments[0], fullname=' '.join(arguments[2::]), semester=abs(int(arguments[1])))
                 if ret == 1:
                     await ctx.send("Sintaxe inválida. Exemplo: `>>mt add BD2 4 Banco de Dados II`.")
                 elif ret == 2:
@@ -73,13 +72,13 @@ class SubjectController(commands.Cog):
             await ctx.send("Sintaxe inválida. Exemplos: `>>mt buscar banco`, `mt buscar bd` ou `mt buscar 4`.")
         else:
             try:
-                matches = self.sbdao.find(' '.join(subject))
+                matches = sbdao.find(' '.join(subject))
                 if matches is None:
                     await ctx.send("Alguma coisa deu errado. Consulte o log para detalhes.")
                 elif len(matches) == 0:
                     await ctx.send("Nenhuma matéria foi encontrado para esse critério.")
                 else:
-                    await ctx.send(f"Encontrada(s): {smoothen(matches)}")
+                    await ctx.send(f"Encontrada(s): ```{smoothen(matches)}```")
             except Exception as e:
                 print(f"Exception caught: {e}")
                 await ctx.send("Alguma coisa deu errado. Consulte o log para detalhes.")
@@ -102,36 +101,23 @@ class SubjectController(commands.Cog):
         elif arguments[0].isnumeric() and int(arguments[0]) in range(0, 9):
             sem = int(arguments[0])
         else:
-            numba = arguments[0].lower()
-            if numba == "primeiro":
-                sem = 1
-            elif numba == "segundo":
-                sem = 2
-            elif numba == "terceiro":
-                sem = 3
-            elif numba == "quarto":
-                sem = 4
-            elif numba == "quinto":
-                sem = 5
-            elif numba == "sexto":
-                sem = 6
-            elif numba == "setimo" or numba == "sétimo":
-                sem = 7
-            elif numba == "oitavo":
-                sem = 8
-            elif numba.startswith("eletiva") or numba.startswith("elo"):
-                sem = 0
-            else:
+            numbas = {
+                0: ["elo", 'eletivas'], 1: ['primeiro'], 2: ['segundo'],
+                3: ['terceiro'], 4: ['quarto'], 5: ['quinto'],
+                6: ['sexto'], 7: ['setimo', 'sétimo'], 8: ['oitavo']
+            }
+            sem = next(iter([key for key, value in numbas.items() if arguments[0].lower() in value]), None)
+            if sem is None:
                 await ctx.send(syntax_error)
                 return
 
-        all_subjects = self.sbdao.find_by_semester(sem)
+        all_subjects = sbdao.find_by_semester(sem)
         if len(all_subjects) == 0:
             await ctx.send("Registro(s) não encontrado(s).")
         else:
             all_subjects = {x.semester: [str(y) for y in all_subjects if y.semester == x.semester] for x in all_subjects}
             for x in all_subjects.keys():
-                await ctx.send(f"{smoothen(all_subjects[x])}")
+                await ctx.send(f"```{smoothen(all_subjects[x])}```")
 
     async def edit_subject(self, ctx: commands.Context):
         """
@@ -154,16 +140,16 @@ class SubjectController(commands.Cog):
             arguments[0] = arguments[0].upper()
             arguments[1] = arguments[1].lower()
             if arguments[1] == 'cod':
-                res = self.sbdao.update(arguments[0], newcode=arguments[2].upper())
+                res = sbdao.update(arguments[0], newcode=arguments[2].upper())
                 op = 2
             elif arguments[1] == 'nome':
-                res = self.sbdao.update(arguments[0], fullname=' '.join(arguments[2::]))
+                res = sbdao.update(arguments[0], fullname=' '.join(arguments[2::]))
                 op = 0
             elif arguments[1] == 'todos' and len(arguments) >= 5:
-                res = self.sbdao.update(code=arguments[0], newcode=arguments[2].upper(), semester=abs(int(arguments[3])), fullname=' '.join(arguments[4::]))
+                res = sbdao.update(code=arguments[0], newcode=arguments[2].upper(), semester=abs(int(arguments[3])), fullname=' '.join(arguments[4::]))
                 op = 2
             elif arguments[1] == 'sem' and arguments[2].isnumeric():
-                res = self.sbdao.update(code=arguments[0], semester=abs(int(arguments[2])))
+                res = sbdao.update(code=arguments[0], semester=abs(int(arguments[2])))
                 op = 0
             else:
                 res = 1
@@ -175,8 +161,8 @@ class SubjectController(commands.Cog):
             elif res == 3:
                 await ctx.send("Alguma coisa deu errado. Consulte o log para detalhes.")
             else:
-                edited_sbj = self.sbdao.find(arguments[op].upper())
+                edited_sbj = sbdao.find(arguments[op].upper())
                 if len(edited_sbj) == 0:
                     await ctx.send("Alguma coisa deu errado. Consulte o log para detalhes.")
                 else:
-                    await ctx.send(f"Editada: {smoothen(str(edited_sbj[0]))}")
+                    await ctx.send(f"Editada: ```{smoothen(str(edited_sbj[0]))}```")

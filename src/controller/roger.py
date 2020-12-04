@@ -55,8 +55,8 @@ class Roger(commands.Cog):
                     ctx.send(u"Deu sorte, malandro. Não tenho permissão pra te mandar pro xilindró.")
                 return
 
-            await ctx.author.add_roles(ctx.guild.get_role(778774271869583480))
             await ctx.send("Como você tirou o julio_cobra.png, você vai virar prisioneiro por dois minutos.")
+            await ctx.author.add_roles(ctx.guild.get_role(778774271869583480))
             await sleep(120)
             try:
                 await ctx.author.remove_roles(ctx.guild.get_role(778774271869583480))
@@ -80,4 +80,4 @@ class Roger(commands.Cog):
         if ctx.prefix != 'Roger ':
             return
 
-        await ctx.send(f"<@450731404532383765>: {self.roger_respostas[randint(1, len(self.roger_respostas.keys()))]}")
+        await ctx.send(f"<@450731404532383765> diz: {self.roger_respostas[randint(1, len(self.roger_respostas.keys()))]}")
