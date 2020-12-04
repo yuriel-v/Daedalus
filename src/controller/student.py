@@ -1,6 +1,6 @@
 # Módulo de controle de estudantes.
 from controller.misc import split_args, dprint, smoothen
-from dao import stdao
+from controller import stdao
 from discord.ext import commands
 
 

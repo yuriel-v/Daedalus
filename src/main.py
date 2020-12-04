@@ -19,6 +19,9 @@ from sqlalchemy.orm import close_all_sessions
 from controller.subject import SubjectController
 from dao import engin
 from model import initialize_sql
+# from dao.studentdao import StudentDao
+# from dao.subjectdao import SubjectDao
+# from dao.schedulerdao import SchedulerDao
 
 # Imports de módulos customizados
 from controller.misc import Misc, split_args, arg_types, smoothen
@@ -36,15 +39,19 @@ from model.registered import Registered
 # Inicialização
 daedalus_token = getenv("DAEDALUS_TOKEN")
 bot = commands.Bot(command_prefix=['>>', 'Roger '])
+daedalus_version = '0.4.3'
+daedalus_environment = getenv("DAEDALUS_ENV")
+# stdao = StudentDao()
+# sbdao = SubjectDao()
+# scdao = SchedulerDao()
+initialize_sql(engin)
+
+# Cogs
 bot.add_cog(Misc(bot))
 bot.add_cog(Games(bot))
 bot.add_cog(Roger(bot))
 bot.add_cog(StudentController(bot))
 bot.add_cog(SubjectController(bot))
-initialize_sql(engin)
-
-daedalus_version = '0.4.2'
-daedalus_environment = getenv("DAEDALUS_ENV")
 
 
 @bot.command('version')
