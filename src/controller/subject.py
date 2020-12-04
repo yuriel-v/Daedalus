@@ -3,7 +3,7 @@
 from os import getenv
 from controller.misc import smoothen, split_args, dprint
 from discord.ext import commands
-from dao import sbdao
+from controller import sbdao
 
 
 class SubjectController(commands.Cog):
