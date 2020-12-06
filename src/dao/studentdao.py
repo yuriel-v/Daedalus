@@ -1,4 +1,4 @@
-from sqlalchemy import literal
+from typing import Union
 from model.student import Student
 from dao import smkr
 
@@ -6,6 +6,12 @@ from dao import smkr
 class StudentDao:
     def __init__(self):
         self.session = smkr()
+
+    def expunge_all(self):
+        self.session.expunge_all()
+
+    def expunge(self, std):
+        self.session.expunge(std)
 
     def insert(self, discord_id: str, name: str, registry: int):
         self.session.rollback()
@@ -36,19 +42,15 @@ class StudentDao:
                 retval = 3  # ???
         return retval
 
-    def find(self, filter: list, exists=False):
+    def find(self, filter: Union[int, str]):
         self.session.rollback()
         if len(filter) == 0:
             return None
         else:
-            if exists:
-                q = self.session.query(Student).filter(Student.discord_id == int(filter[0]))
-                return self.session.query(literal(True)).filter(q.exists()).scalar()
-
-            elif str(filter[0]).isnumeric():
-                q = self.session.query(Student).filter(Student.registry == int(filter[0]))
+            if isinstance(filter, int):
+                q = self.session.query(Student).filter(Student.registry == filter)
             else:
-                q = self.session.query(Student).filter(Student.name.ilike(f'%{" ".join(filter)}%'))
+                q = self.session.query(Student).filter(Student.name.ilike(f'%{filter}%'))
 
             return q.all()
 

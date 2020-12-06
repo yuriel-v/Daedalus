@@ -16,18 +16,16 @@ Contanto que me dê o crédito, claro.
 from os import getenv
 from discord.ext import commands
 from sqlalchemy.orm import close_all_sessions
-from controller.subject import SubjectController
 from dao import engin
 from model import initialize_sql
-# from dao.studentdao import StudentDao
-# from dao.subjectdao import SubjectDao
-# from dao.schedulerdao import SchedulerDao
 
 # Imports de módulos customizados
 from controller.misc import Misc, split_args, arg_types, smoothen
 from controller.games import Games
-from controller.student import StudentController
 from controller.roger import Roger
+from controller.student import StudentController
+from controller.scheduler import ScheduleController
+from controller.subject import SubjectController
 
 # Por alguma causa, motivo, razão ou circunstância, se esses imports não
 # forem feitos, o sistema não mapeia os objetos.
@@ -41,9 +39,6 @@ daedalus_token = getenv("DAEDALUS_TOKEN")
 bot = commands.Bot(command_prefix=['>>', 'Roger '])
 daedalus_version = '0.4.3'
 daedalus_environment = getenv("DAEDALUS_ENV")
-# stdao = StudentDao()
-# sbdao = SubjectDao()
-# scdao = SchedulerDao()
 initialize_sql(engin)
 
 # Cogs
@@ -52,6 +47,7 @@ bot.add_cog(Games(bot))
 bot.add_cog(Roger(bot))
 bot.add_cog(StudentController(bot))
 bot.add_cog(SubjectController(bot))
+bot.add_cog(ScheduleController(bot))
 
 
 @bot.command('version')
@@ -84,6 +80,17 @@ async def tolog(ctx):
 @bot.command('fmt')
 async def fmt(ctx):
     await ctx.send(f"```{smoothen(split_args(ctx.message.content, islist=False))}```")
+
+
+@bot.command('drop')
+async def drop_tables(ctx):
+    if str(ctx.author.id) != getenv("DAEDALUS_OWNERID"):
+        await ctx.send("Somente o proprietário pode rodar esse comando.")
+        return
+    Assigned.__table__.drop()
+    Registered.__table__.drop()
+    initialize_sql(engin)
+    await ctx.send("Feito. Verifique o log para confirmação.")
 
 # Aqui é só a parte de rodar e terminar o bot.
 bot.run(daedalus_token)

@@ -2,6 +2,7 @@
 from controller.misc import split_args, dprint, smoothen
 from controller import stdao
 from discord.ext import commands
+from model.student import Student
 
 
 class StudentController(commands.Cog):
@@ -63,7 +64,7 @@ class StudentController(commands.Cog):
         Ex.: `st buscar 2019123456`
         """
 
-        arguments = split_args(ctx.message.content, prefixed=True)
+        arguments = split_args(ctx.message.content, prefixed=True, islist=False)
         if len(arguments) == 0:
             await ctx.send("Sintaxe inválida. Exemplo: `>>st buscar 2019123456` (matrícula) ou `>>st buscar João Carlos`.")
             return
@@ -72,12 +73,12 @@ class StudentController(commands.Cog):
         comedias = False
         roger = False
 
-        if "roger" in arguments[0].lower():
+        if "roger" in arguments.lower():
             roger = True
-        if arguments[0].lower().startswith("comédia"):
+        if arguments.lower().startswith("comédia"):
             q = stdao.find_all()
             comedias = True
-        elif arguments[0].lower() == "todos":
+        elif arguments.lower() == "todos":
             q = stdao.find_all()
         else:
             q = stdao.find(arguments)
@@ -101,11 +102,15 @@ class StudentController(commands.Cog):
 
         Sintaxe: `existe 263169934543028225`
         """
-        exists = stdao.find(split_args(ctx.message.content, prefixed=True), exists=True)
+        disc_id = split_args(ctx.message.content, prefixed=True, islist=False)
+        try:
+            exists = stdao.find_by_discord_id(int(disc_id))
 
-        if exists:
-            await ctx.send("ID existente.")
-        else:
+            if exists:
+                await ctx.send("ID existente.")
+            else:
+                await ctx.send("ID não existente.")
+        except Exception:
             await ctx.send("ID não existente.")
 
     async def view_self(self, ctx: commands.Context):
@@ -113,11 +118,24 @@ class StudentController(commands.Cog):
         Verifica se a pessoa que invocou o comando está cadastrada no banco de dados.
         Se sim, então os dados da pessoa são mostrados.
         """
-        cur_student = stdao.find_by_discord_id(ctx.author.id)
+        cur_student: Student = stdao.find_by_discord_id(ctx.author.id)
         if cur_student is None:
             await ctx.send("Você não está cadastrado.")
         else:
-            await ctx.send(f"Seus dados: ```{smoothen(str(cur_student))}```")
+            # Dict of dicts in format:
+            # MT1:
+            #   AV1: STS
+            #   AV2: STS
+            # ...
+            # cur_subjects = {assign.subject.code: {assign.show_type(): assign.show_status()} for assign in cur_student.is_assigned if assign.is_current()}
+            # cur_strings = []
+            # parse to string afterwards
+            # for key in cur_subjects.keys():
+            #     cur_strings.append(f"{str(key)} | {' | '.join([f'{k}: {v}' for k, v in cur_subjects[key].items()])}")
+
+            composite_message = f"Seus dados: ```{smoothen(str(cur_student))}```\n"
+            # composite_message += f"Suas matérias: ```{smoothen(cur_strings)}```"
+            await ctx.send(composite_message)
 
     async def edit_student(self, ctx: commands.Context):
         """

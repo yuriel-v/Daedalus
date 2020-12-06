@@ -1,11 +1,17 @@
 from sqlalchemy import literal
 from model.subject import Subject
-from dao import smkr, engin
+from dao import smkr
 
 
 class SubjectDao:
     def __init__(self):
         self.session = smkr()
+
+    def expunge_all(self):
+        self.session.expunge_all()
+
+    def expunge(self, sbj):
+        self.session.expunge(sbj)
 
     def insert(self, code: str, fullname: str, semester: int):
         self.session.rollback()
@@ -22,29 +28,51 @@ class SubjectDao:
                 self.session.rollback()
                 return 2  # ???
 
-    def find(self, filter: str, exists=False):
+    def find(self, filter: str, exists=False, by_key=True):
         self.session.rollback()
         if len(filter) == 0:
-            return None
+            return []
         else:
             q = None
             try:
                 q = self.session.query(Subject)
-                if filter.isnumeric():
-                    q = q.filter(Subject.semester == abs(int(filter)))
 
-                elif len(filter) <= 3:
+                if by_key or len(filter) <= 3:
                     q = q.filter(Subject.code.ilike(f'%{filter}%'))
+                elif filter.isnumeric():
+                    q = q.filter(Subject.semester == abs(int(filter)))
                 else:
                     q = q.filter(Subject.fullname.ilike(f'%{filter}%'))
 
                 if exists:
                     q = self.session.query(literal(True)).filter(q.exists()).scalar()
+                elif by_key:
+                    q = q.first()
                 else:
                     q = q.order_by(Subject.semester).all()
 
             except Exception as e:
-                q = None
+                q = []
+                print(f"Exception caught on SubjectDao: {e}")
+            return q
+
+    def find_by_code(self, filter: list[str]):
+        """
+        Encontra TUTO baseado numa lista de strings, contendo códigos de matéria.
+
+        Todos os códigos nessa lista necessariamente têm que ser de comprimento 3,
+        logo códigos incompletos não vão ser reconhecidos, assim sendo descartados.
+        """
+        self.session.rollback()
+        if not filter:
+            return []
+        else:
+            try:
+                filter = [str(x).upper() for x in filter if len(x) == 3]
+                q = self.session.query(Subject).filter(Subject.code.in_(filter)).all()
+            except Exception as e:
+                self.session.rollback()
+                q = []
                 print(f"Exception caught on SubjectDao: {e}")
             return q
 
@@ -58,9 +86,11 @@ class SubjectDao:
     def find_all(self):
         """
         Encontra TUTO CHESSUS.
+
         POR FAVOR, PERCEBA QUE ESSE COMANDO GERA MUITO SPAM QUANDO ENVIADO
         EM UMA OU VÁRIAS MENSAGENS DEVIDO AO FATO DE TERMOS MUITAS MATÉRIAS
         CADASTRADAS.
+
         Ao invés de se afundar em um mar de lama, utilize o método :py:meth:`~dao.subjectdao.SubjectDao.find_by_semester`.
         """
         """

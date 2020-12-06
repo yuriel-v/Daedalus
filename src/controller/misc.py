@@ -11,7 +11,7 @@ def split_args(arguments: str, prefixed=False, islist=True):
     if arguments[0] == 'Roger':
         arguments.pop(0)
 
-    if (arguments[0].endswith('st') or arguments[0].endswith('mt')) and prefixed:
+    if prefixed:
         arguments.pop(1)
 
     arguments.pop(0)
@@ -61,7 +61,7 @@ def smoothen(message: Iterable, complement=False):
         for string in message:
             formatted_message += f'| {string}{" " * (dashes - 1 - len(string))}|\n'
 
-    formatted_message += f'\n+{"-" * dashes}+\n'
+    formatted_message += f'+{"-" * dashes}+\n'
     return formatted_message
 
 
