@@ -1,6 +1,6 @@
 from model.student import Student
 from model.subject import Subject
-from model.assigned import Assigned
+from model.exam import Exam
 from model.registered import Registered
 from dao import smkr
 from datetime import date
@@ -16,28 +16,48 @@ class SchedulerDao:
         try:
             self.session.add(student)
 
+            # for reg in student.registered_on:
+            #     if reg.subject in subjects:
+            #         subjects.remove(reg.subject)
+            #         if not reg.subject.active:  # reactivating a locked subject
+            #             reg.subject.active = True
+            #             if reg.semester != self.cur_semester:  # retrying a failed subject
+            #                 reg.semester = self.cur_semester
+            #                 for exam in reg.exams:
+            #                     if exam.subject == reg.subject:
+            #                         exam.reset()
+
+            # for subj in subjects:  # registering for new subjects
+            #     self.session.add(subj)
+            #     registry = Registered(semester=self.cur_semester, active=True)
+            #     registry.subject = subj
+            #     registry.student = student
+            #     student.registered_on.append(registry)
+            #     for x in range(1, 6):
+            #         exam = Exam(status=3, exam_type=x, grade=0.0)
+            #         exam.registry = registry
+            #         student.is_assigned.append(exam)
+
             for reg in student.registered_on:
                 if reg.subject in subjects:
                     subjects.remove(reg.subject)
-                    if not reg.subject.active:  # reactivating a locked subject
-                        reg.subject.active = True
-                        if reg.semester != self.cur_semester:  # retrying a failed subject
-                            reg.semester = self.cur_semester
-                            for exam in student.is_assigned:
-                                if exam.subject == reg.subject:
-                                    exam.reset()
+                    if not reg.active:  # reactivating a locked subject
+                        reg.active = True
+                    if reg.semester != self.cur_semester:  # retrying a failed subject
+                        reg.semester = self.cur_semester
+                        for exam in reg.exams:
+                            exam.reset()
 
-            for subj in subjects:  # registering for new subjects
+            for subj in subjects:  # registering new subjects
                 self.session.add(subj)
                 registry = Registered(semester=self.cur_semester, active=True)
                 registry.subject = subj
                 registry.student = student
-                student.registered_on.append(registry)
                 for x in range(1, 6):
-                    exam = Assigned(status=3, exam_type=x, grade=0.0)
-                    exam.subject = subj
-                    exam.student = student
-                    student.is_assigned.append(exam)
+                    exam = Exam(exam_type=x, status=3, grade=0.0)
+                    exam.registry = registry
+                    registry.exams.append(exam)
+                student.registered_on.append(registry)
 
             self.session.commit()
             self.session.expunge_all()
@@ -47,19 +67,19 @@ class SchedulerDao:
             print(f"Exception caught at registering students: {e}")
             return 1
 
-    def find(self, student, exams=True, previous=False):
+    def find(self, student, exams=False, previous=False):
         self.session.rollback()
         if isinstance(student, Student):
             if exams:
                 if previous:
                     a = {
-                        x.subject.code: [y for y in student.is_assigned if y.sbj_id == x.sbj_id]
+                        x.subject.code: [y for y in x.exams if y.sbj_id == x.sbj_id]
                         for x in student.registered_on
                         if x.semester < self.cur_semester
                     }
                 else:
                     a = {
-                        x.subject.code: [y for y in student.is_assigned if y.sbj_id == x.sbj_id]
+                        x.subject.code: [y for y in x.exams if y.sbj_id == x.sbj_id]
                         for x in student.registered_on
                         if x.semester == self.cur_semester
                     }

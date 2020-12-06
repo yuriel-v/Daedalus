@@ -11,6 +11,7 @@ from model import Base
 class Registered(Base):
     __tablename__ = 'registered'
 
+    id = Column(Integer, autoincrement=True, unique=True, nullable=False)
     std_id = Column(Integer, ForeignKey(Student.id), primary_key=True)
     sbj_id = Column(Integer, ForeignKey(Subject.id), primary_key=True)
     semester = Column(Date)
@@ -18,6 +19,7 @@ class Registered(Base):
 
     student = relationship('Student', back_populates='registered_on')
     subject = relationship('Subject', back_populates='registered_by')
+    exams = relationship('Exam', back_populates='registry')
 
     def is_current(self):
         cur_semester = date(day=1, year=date().today().year, month=(lambda: 1 if date.today().month < 7 else 2)())
