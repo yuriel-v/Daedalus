@@ -1,9 +1,15 @@
 # Módulo de sei lá o quê. Utilidades em geral. E memes.
+from os import getenv
 from typing import Iterable, Union
 from discord.ext import commands
 from sys import getsizeof
 
-debug = True
+from model.student import Student
+from model.subject import Subject
+from dao import smkr, dsvsmkr
+
+daedalus_environment = getenv("DAEDALUS_ENV").upper()
+debug = bool(daedalus_environment == "DSV")
 
 
 def split_args(arguments: str, prefixed=False, islist=True):
@@ -100,3 +106,139 @@ class Misc(commands.Cog):
                 numba = int(args[0])
 
             await ctx.send(f"Tamanho de `{numba}`: {getsizeof(numba)} bytes.")
+
+    @commands.command('backup')
+    async def move_to_dsv_db(ctx):
+        if str(ctx.author.id) != getenv("DAEDALUS_OWNERID"):
+            await ctx.send("Somente o proprietário pode rodar esse comando.")
+        elif daedalus_environment != "DSV":
+            return
+        else:
+            try:
+                dsvsession = dsvsmkr()
+                session = smkr()
+                print("---------- Sessions initialized ----------")
+            except Exception:
+                print("Exception caught while initializing sessions and databases")
+                return
+
+            try:
+                prd_students = session.query(Student).all()
+                prd_subjects = session.query(Subject).all()
+                print("---------- Subjects and students fetched ----------")
+            except Exception as e:
+                print(f"Exception caught while fetching current data from PRD DB: {e}")
+                dsvsession.close()
+                session.close()
+                return
+
+            try:
+                dsv_students = [Student(
+                    id=int(student.id),
+                    name=str(student.name),
+                    registry=int(student.registry),
+                    discord_id=int(student.discord_id)
+                ) for student in prd_students]
+
+                dsv_subjects = [Subject(
+                    id=int(subject.id),
+                    code=str(subject.code),
+                    fullname=str(subject.fullname),
+                    semester=int(subject.semester)
+                ) for subject in prd_subjects]
+                print("---------- Subjects and students copied ----------")
+            except Exception as e:
+                print("Exception caught while sanitizing data")
+                dsvsession.close()
+                session.close()
+                return
+
+            try:
+                session.expunge_all()
+                dsvsession.add_all(dsv_students)
+                dsvsession.add_all(dsv_subjects)
+                print("---------- Data added to DSV session ----------")
+            except Exception:
+                print("Exception caught while adding current data to DSV session")
+                dsvsession.close()
+                session.close()
+                return
+
+            try:
+                dsvsession.commit()
+                session.rollback()
+                print("---------- Changes committed ----------")
+                await ctx.send("Feito. Verifique o log para confirmação.")
+            except Exception:
+                print("Exception caught while committing changes to DSV DB")
+            finally:
+                dsvsession.close()
+                session.close()
+
+    @commands.command('restore')
+    async def move_to_prd_db(ctx):
+        if str(ctx.author.id) != getenv("DAEDALUS_OWNERID"):
+            await ctx.send("Somente o proprietário pode rodar esse comando.")
+        elif daedalus_environment != "DSV":
+            return
+        else:
+            try:
+                dsvsession = dsvsmkr()
+                session = smkr()
+                print("---------- Sessions initialized ----------")
+            except Exception:
+                print("Exception caught while initializing sessions and databases")
+                return
+
+            try:
+                dsv_students = dsvsession.query(Student).all()
+                dsv_subjects = dsvsession.query(Subject).all()
+                print("---------- Subjects and students fetched ----------")
+            except Exception:
+                print("Exception caught while fetching current data from DSV DB")
+                dsvsession.close()
+                session.close()
+                return
+
+            try:
+                prd_students = [Student(
+                    id=int(student.id),
+                    name=str(student.name),
+                    registry=int(student.registry),
+                    discord_id=int(student.discord_id)
+                ) for student in dsv_students]
+
+                prd_subjects = [Subject(
+                    id=int(subject.id),
+                    code=str(subject.code),
+                    fullname=str(subject.fullname),
+                    semester=int(subject.semester)
+                ) for subject in dsv_subjects]
+                print("---------- Subjects and students copied ----------")
+            except Exception as e:
+                print("Exception caught while sanitizing data")
+                dsvsession.close()
+                session.close()
+                return
+
+            try:
+                dsvsession.expunge_all()
+                session.add_all(prd_students)
+                session.add_all(prd_subjects)
+                print("---------- Data added to PRD session ----------")
+            except Exception:
+                print("Exception caught while adding current data to PRD session")
+                dsvsession.close()
+                session.close()
+                return
+
+            try:
+                session.commit()
+                dsvsession.rollback()
+                print("---------- Changes committed ----------")
+                await ctx.send("Feito. Verifique o log para confirmação.")
+            except Exception:
+                print("Exception caught while committing changes to PRD DB")
+            finally:
+                dsvsession.close()
+                session.close()

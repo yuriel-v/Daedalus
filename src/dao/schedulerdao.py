@@ -16,28 +16,6 @@ class SchedulerDao:
         try:
             self.session.add(student)
 
-            # for reg in student.registered_on:
-            #     if reg.subject in subjects:
-            #         subjects.remove(reg.subject)
-            #         if not reg.subject.active:  # reactivating a locked subject
-            #             reg.subject.active = True
-            #             if reg.semester != self.cur_semester:  # retrying a failed subject
-            #                 reg.semester = self.cur_semester
-            #                 for exam in reg.exams:
-            #                     if exam.subject == reg.subject:
-            #                         exam.reset()
-
-            # for subj in subjects:  # registering for new subjects
-            #     self.session.add(subj)
-            #     registry = Registered(semester=self.cur_semester, active=True)
-            #     registry.subject = subj
-            #     registry.student = student
-            #     student.registered_on.append(registry)
-            #     for x in range(1, 6):
-            #         exam = Exam(status=3, exam_type=x, grade=0.0)
-            #         exam.registry = registry
-            #         student.is_assigned.append(exam)
-
             for reg in student.registered_on:
                 if reg.subject in subjects:
                     subjects.remove(reg.subject)
