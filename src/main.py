@@ -33,7 +33,7 @@ from controller.roger import Roger
 # forem feitos, o sistema não mapeia os objetos.
 from model.student import Student
 from model.subject import Subject
-from model.assigned import Assigned
+from model.exam import Exam
 from model.registered import Registered
 
 # Inicialização
