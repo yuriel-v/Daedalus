@@ -61,7 +61,7 @@ def smoothen(message: Iterable, complement=False):
         for string in message:
             formatted_message += f'| {string}{" " * (dashes - 1 - len(string))}|\n'
 
-    formatted_message += f'\n+{"-" * dashes}+\n'
+    formatted_message += f'+{"-" * dashes}+\n'
     return formatted_message
 
 
