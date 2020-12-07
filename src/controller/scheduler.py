@@ -1,7 +1,7 @@
 # Controlador para registro de matrículas em matérias e suas atividades.
 
 from controller.misc import split_args, dprint, smoothen
-from controller import stdao, sbdao  # , scdao
+from controller import stdao, sbdao, scdao
 from discord.ext import commands
 from model.student import Student
 
@@ -27,26 +27,25 @@ class ScheduleController(commands.Cog):
                 await ctx.send("Comando inválido. Sintaxe: `>>sc comando argumentos`")
 
     async def sign_up(self, ctx, student: Student):
-        pass
-        # arguments = split_args(ctx.message.content, prefixed=True)
-        # if not arguments:
-        #     await ctx.send("Sintaxe inválida. Exemplo: `>>sc matricular mt1 mt2 ...`")
-        # else:
-        #     arguments = list(filter(lambda x: len(x) == 3, arguments))
-        #     if len(arguments) > 8:
-        #         arguments = arguments[0:7:1]  # up to 8 at once only, uni rules
-        #     subjects = sbdao.find_by_code(arguments)
-        #     subjects = {x for x in subjects if x is not None}
-        #     subj_names = [f"-> {str(x.code)}: {str(x.fullname)}" for x in subjects]
+        arguments = split_args(ctx.message.content, prefixed=True)
+        if not arguments:
+            await ctx.send("Sintaxe inválida. Exemplo: `>>sc matricular mt1 mt2 ...`")
+        else:
+            arguments = list(filter(lambda x: len(x) == 3, arguments))
+            if len(arguments) > 8:
+                arguments = arguments[0:7:1]  # up to 8 at once only, uni rules
+            subjects = sbdao.find_by_code(arguments)
+            subjects = {x for x in subjects if x is not None}
+            subj_names = [f"-> {str(x.code)}: {str(x.fullname)}" for x in subjects]
 
-        #     if not subjects:
-        #         await ctx.send("Matéria(s) inexistente(s).\nUse o comando `>>mt todas` ou `>>mt buscar` para verificar o código da(s) matéria(s) desejada(s).")
-        #     else:
-        #         stdao.expunge(student)
-        #         for subj in subjects:
-        #             sbdao.expunge(subj)
-        #         res = scdao.register(student=student, subjects=subjects)
-        #         if res == 0:
-        #             await ctx.send(f"Matrícula registrada nas matérias a seguir:\n```{smoothen(subj_names)}```")
-        #         else:
-        #             await ctx.send("Algo deu errado. Consulte o log para mais detalhes.")
+            if not subjects:
+                await ctx.send("Matéria(s) inexistente(s).\nUse o comando `>>mt todas` ou `>>mt buscar` para verificar o código da(s) matéria(s) desejada(s).")
+            else:
+                stdao.expunge(student)
+                for subj in subjects:
+                    sbdao.expunge(subj)
+                res = scdao.register(student=student, subjects=subjects)
+                if res == 0:
+                    await ctx.send(f"Matrícula registrada nas matérias a seguir:\n```{smoothen(subj_names)}```")
+                else:
+                    await ctx.send("Algo deu errado. Consulte o log para mais detalhes.")

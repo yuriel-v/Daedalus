@@ -1,3 +1,4 @@
+from sqlalchemy.orm import joinedload
 from model.student import Student
 from model.subject import Subject
 from model.exam import Exam
@@ -31,11 +32,11 @@ class SchedulerDao:
                 registry = Registered(semester=self.cur_semester, active=True)
                 registry.subject = subj
                 registry.student = student
+                student.registered_on.append(registry)
                 for x in range(1, 6):
                     exam = Exam(exam_type=x, status=3, grade=0.0)
                     exam.registry = registry
                     registry.exams.append(exam)
-                student.registered_on.append(registry)
 
             self.session.commit()
             self.session.expunge_all()
@@ -45,36 +46,30 @@ class SchedulerDao:
             print(f"Exception caught at registering students: {e}")
             return 1
 
-    def find(self, student, exams=False, previous=False):
+    def find(self, student: Student, exams=False, previous=False):
         self.session.rollback()
-        if isinstance(student, Student):
-            if exams:
-                if previous:
-                    a = {
-                        x.subject.code: [y for y in x.exams if y.sbj_id == x.sbj_id]
-                        for x in student.registered_on
-                        if x.semester < self.cur_semester
-                    }
-                else:
-                    a = {
-                        x.subject.code: [y for y in x.exams if y.sbj_id == x.sbj_id]
-                        for x in student.registered_on
-                        if x.semester == self.cur_semester
-                    }
+        if student is not None:
+            q = self.session.query(Registered)
+            if not previous:
+                q = q.filter(Registered.semester == self.cur_semester, Registered.std_id == student.id)
             else:
-                if previous:
-                    a = {x.subject.code: x.subject for x in student.registered_on if x.semester < self.cur_semester}
-                else:
-                    a = {x.subject.code: x.subject for x in student.registered_on if x.semester == self.cur_semester}
-            return a
+                q = q.filter(Registered.semester < self.cur_semester, Registered.std_id == student.id)
+            q = q.all()
 
-        elif isinstance(student, int):  # by discord ID only!
-            # unable to use stdao.find_by_discord_id() here because of circular imports
-            st = self.session.query(Student).filter(Student.discord_id == student).first()
-            return self.find(student=st, exams=exams, previous=previous)
-
+            # attach subjects
+            subjects = self.session.query(Subject).filter(Subject.id.in_([int(x.sbj_id) for x in q])).all()
+            for subj in subjects:
+                for reg in q:
+                    if int(reg.sbj_id) == int(subj.id):
+                        reg.subject = subj
+            # attach exams
+            if exams:
+                exams = list(self.session.query(Exam).filter(Exam.id.in_([int(x.id) for x in q])).all())
+                for reg in q:
+                    reg.eager_exams = [exam for exam in exams if int(exam.id) == int(reg.id)]
+            return q
         else:
-            return dict({})
+            return None
 
     def update_assignment(self, student: Student, subject: Subject, grade=None, state=None):
         if not (grade or state):

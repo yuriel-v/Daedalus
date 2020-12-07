@@ -1,6 +1,7 @@
 # Módulo de controle de estudantes.
+import time
 from controller.misc import split_args, dprint, smoothen
-from controller import stdao
+from controller import stdao, scdao
 from discord.ext import commands
 from model.student import Student
 
@@ -122,20 +123,20 @@ class StudentController(commands.Cog):
         if cur_student is None:
             await ctx.send("Você não está cadastrado.")
         else:
-            # Dict of dicts in format:
-            # MT1:
-            #   AV1: STS
-            #   AV2: STS
-            # ...
-            # cur_subjects = {assign.subject.code: {assign.show_type(): assign.show_status()} for assign in cur_student.is_assigned if assign.is_current()}
-            # cur_strings = []
-            # parse to string afterwards
-            # for key in cur_subjects.keys():
-            #     cur_strings.append(f"{str(key)} | {' | '.join([f'{k}: {v}' for k, v in cur_subjects[key].items()])}")
+            start = time.time()
+            cur_subjects = scdao.find(cur_student, exams=True)
+            # parse to strings afterward
+            cur_strings = []
+            for reg in cur_subjects:
+                composite = str(reg.subject.code) + ' | '
+                composite += ' | '.join([f"{exam.show_type()}: {exam.show_status()}" for exam in reg.eager_exams])
+                cur_strings.append(composite)
 
-            composite_message = f"Seus dados: ```{smoothen(str(cur_student))}```\n"
-            # composite_message += f"Suas matérias: ```{smoothen(cur_strings)}```"
+            composite_message = f"Seus dados: ```{smoothen(str(cur_student))}```"
+            if cur_strings:
+                composite_message += f"Suas matérias: ```{smoothen(cur_strings)}```"
             await ctx.send(composite_message)
+            print(f"------------------ Time taken: {round(time.time() - start, 2)} sec ------------------")
 
     async def edit_student(self, ctx: commands.Context):
         """

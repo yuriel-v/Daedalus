@@ -16,7 +16,7 @@ Contanto que me dê o crédito, claro.
 from os import getenv
 from discord.ext import commands
 from sqlalchemy.orm import close_all_sessions
-from dao import engin, dsvengin, smkr, dsvsmkr
+from dao import engin, dsvengin
 from model import initialize_sql
 
 # Imports de módulos customizados
@@ -39,8 +39,8 @@ bot = commands.Bot(command_prefix=['>>', 'Roger '])
 daedalus_version = '0.4.3'
 daedalus_environment = getenv("DAEDALUS_ENV").upper()
 initialize_sql(engin)
-if daedalus_environment == "DSV":
-    initialize_sql(dsvengin)
+# if daedalus_environment == "DSV":
+#     initialize_sql(dsvengin)
 
 
 # Cogs
