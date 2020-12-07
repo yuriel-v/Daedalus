@@ -22,14 +22,14 @@ class Exam(Base):
         self.grade = 0.0
 
     def show_status(self):
-        statuses = ['OK', 'EPN', 'PND']
+        statuses = ('OK ', 'EPN', 'PND')
         if self.status in range(1, 4):
             return statuses[self.status - 1]
         else:
             return "ERR"
 
     def show_type(self):
-        exam_types = ['AV1', 'APS1', 'AV2', 'APS2', 'AV3']
+        exam_types = ('AV1', 'APS1', 'AV2', 'APS2', 'AV3')
         if self.exam_type in range(1, 6):
             return exam_types[self.exam_type - 1]
         else:

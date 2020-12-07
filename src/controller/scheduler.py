@@ -4,6 +4,7 @@ from controller.misc import split_args, dprint, smoothen
 from controller import stdao, sbdao, scdao
 from discord.ext import commands
 from model.student import Student
+from model.subject import Subject
 
 
 class ScheduleController(commands.Cog):
@@ -23,10 +24,14 @@ class ScheduleController(commands.Cog):
                 await self.sign_up(ctx, student)
             elif command == "trancar":
                 pass
+            elif command == "nota":
+                await self.update_grade(ctx, student)
+            elif command == "sts" or command == "status":
+                await self.update_status(ctx, student)
             else:
                 await ctx.send("Comando inválido. Sintaxe: `>>sc comando argumentos`")
 
-    async def sign_up(self, ctx, student: Student):
+    async def sign_up(self, ctx: commands.Context, student: Student):
         arguments = split_args(ctx.message.content, prefixed=True)
         if not arguments:
             await ctx.send("Sintaxe inválida. Exemplo: `>>sc matricular mt1 mt2 ...`")
@@ -49,3 +54,71 @@ class ScheduleController(commands.Cog):
                     await ctx.send(f"Matrícula registrada nas matérias a seguir:\n```{smoothen(subj_names)}```")
                 else:
                     await ctx.send("Algo deu errado. Consulte o log para mais detalhes.")
+
+    async def update_grade(self, ctx: commands.Context, student: Student):
+        arguments = split_args(ctx.message.content, prefixed=True)
+        invalid_syntax = "Sintaxe: `>>sc nota codigo trabalho novanota antigo?` - 'antigo' é opcional: sim ou não.\nExemplo: `>>sc nota AL1 AV1 9.5`"
+        invalid_syntax += "\nSe tentar mudar a nota para uma matéria de um semestre anterior, terá que especificar 'sim' em antigo."
+        if len(arguments) < 3:
+            await ctx.send(invalid_syntax)
+        else:
+            try:
+                arguments[0] = arguments[0].upper()
+                arguments[1] = ('AV1', 'APS1', 'AV2', 'APS2', 'AV3').index(arguments[1].upper()) + 1
+                arguments[2] = float(arguments[2])
+                if len(arguments) > 4:
+                    arguments = arguments[0:3:1]
+                if len(arguments) == 4:
+                    arguments[3] == bool(arguments[3].lower() == 'sim')
+                else:
+                    arguments.append(False)
+                if len(arguments[0]) != 3:
+                    raise SyntaxError("Subject code length is not 3")
+            except Exception:
+                await ctx.send(invalid_syntax)
+                return
+
+            sbj: Subject = sbdao.find_one_by_code(arguments[0])
+            res = scdao.update(student=student, subject=sbj, exam_type=arguments[1], newval=arguments[2], current=arguments[3], grade=True)
+            if res == 0:
+                await ctx.send(f"Nota alterada: ```{smoothen(f'{sbj.fullname} | {arguments[1]}: {round(arguments[2], 1)}')}```")
+            elif res == 2:
+                await ctx.send(invalid_syntax)
+            elif res == 3:
+                await ctx.send("O trabalho para a matéria especificada não foi encontrado.")
+            else:
+                await ctx.send("Algo deu errado. Consulte o log para mais detalhes.")
+
+    async def update_status(self, ctx: commands.Context, student: Student):
+        arguments = split_args(ctx.message.content, prefixed=True)
+        invalid_syntax = "Sintaxe: `>>sc status codigo trabalho novostatus`.\nExemplo: `>>sc status AL1 AV1 OK`"
+        if len(arguments) < 3:
+            await ctx.send(invalid_syntax)
+        else:
+            try:
+                statuses = ('OK', 'EPN', 'PND')
+                exam_types = ('AV1', 'APS1', 'AV2', 'APS2', 'AV3')
+                arguments[0] = arguments[0].upper()
+                arguments[1] = exam_types.index(arguments[1].upper()) + 1
+                if len(arguments) >= 4:
+                    if ' '.join(arguments[2:4:]).lower() == 'envio pendente':
+                        arguments[2] = 2
+                if not isinstance(arguments[2], int):
+                    if arguments[2] == 'pendente':
+                        arguments[2] = 3
+                    else:
+                        arguments[2] = statuses.index(arguments[2].upper()) + 1
+            except Exception as e:
+                await ctx.send(invalid_syntax)
+                return
+
+            sbj: Subject = sbdao.find_one_by_code(arguments[0])
+            res = scdao.update(student=student, subject=sbj, exam_type=arguments[1], newval=arguments[2], grade=False)
+            if res == 0:
+                await ctx.send(f"Status alterado: ```{smoothen(f'{sbj.fullname} | {exam_types[arguments[1] - 1]}: {statuses[arguments[2] - 1]}')}```")
+            elif res == 2:
+                await ctx.send(invalid_syntax)
+            elif res == 3:
+                await ctx.send("O trabalho para a matéria especificada não foi encontrado.")
+            else:
+                await ctx.send("Algo deu errado. Consulte o log para mais detalhes.")

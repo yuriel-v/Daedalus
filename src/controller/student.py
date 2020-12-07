@@ -123,6 +123,9 @@ class StudentController(commands.Cog):
         if cur_student is None:
             await ctx.send("Você não está cadastrado.")
         else:
+            command = next(iter(split_args(ctx.message.content, prefixed=True)), None)
+            if command is not None:
+                command = command.lower()
             start = time.time()
             cur_subjects = scdao.find(cur_student, exams=True)
             # parse to strings afterward
@@ -136,7 +139,7 @@ class StudentController(commands.Cog):
             if cur_strings:
                 composite_message += f"Suas matérias: ```{smoothen(cur_strings)}```"
             await ctx.send(composite_message)
-            print(f"------------------ Time taken: {round(time.time() - start, 2)} sec ------------------")
+            dprint(f"------------------ Time taken: {round(time.time() - start, 2)} sec ------------------")
 
     async def edit_student(self, ctx: commands.Context):
         """

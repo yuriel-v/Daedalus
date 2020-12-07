@@ -76,6 +76,14 @@ class SubjectDao:
                 print(f"Exception caught on SubjectDao: {e}")
             return q
 
+    def find_one_by_code(self, code: str):
+        self.session.rollback()
+        if len(code) != 3:
+            return None
+        else:
+            code = code.upper()
+            return self.session.query(Subject).filter(Subject.code == code).first()
+
     def find_by_semester(self, semester: int):
         self.session.rollback()
         if semester > 8 or semester < 0:

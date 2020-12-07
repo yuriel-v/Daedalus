@@ -27,5 +27,5 @@ class Registered(Base):
     eager_exams = []
 
     def is_current(self):
-        cur_semester = date(day=1, year=date().today().year, month=(lambda: 1 if date.today().month < 7 else 2)())
+        cur_semester = date(day=1, year=date().today().year, month=(lambda: 1 if date.today().month < 7 else 7)())
         return bool(self.semester == cur_semester)
