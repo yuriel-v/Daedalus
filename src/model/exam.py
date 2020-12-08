@@ -35,6 +35,12 @@ class Exam(Base):
         else:
             return "ERR"
 
+    def show_grade(self):
+        if self.status != 1:
+            return '?.?'
+        else:
+            return round(self.grade, 1)
+
 # Status:
 # - 1: OK
 # - 2: Entrega pendente (tarefa concluída/parcialmente concluída)

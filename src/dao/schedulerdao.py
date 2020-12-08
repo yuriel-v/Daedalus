@@ -1,5 +1,4 @@
 from typing import Union
-from sqlalchemy.orm import joinedload
 from model.student import Student
 from model.subject import Subject
 from model.exam import Exam
@@ -50,12 +49,12 @@ class SchedulerDao:
     def find(self, student: Student, exams=False, previous=False):
         self.session.rollback()
         if student is not None:
-            q = self.session.query(Registered)
+            q = self.session.query(Registered).filter(Registered.active == 'true', Registered.std_id == student.id)
             if not previous:
-                q = q.filter(Registered.semester == self.cur_semester, Registered.std_id == student.id)
+                q = q.filter(Registered.semester == self.cur_semester)
             else:
-                q = q.filter(Registered.semester < self.cur_semester, Registered.std_id == student.id)
-            q = q.all()
+                q = q.filter(Registered.semester < self.cur_semester)
+            q: list = q.all()
 
             # attach subjects
             subjects = self.session.query(Subject).filter(Subject.id.in_([int(x.sbj_id) for x in q])).all()
@@ -96,7 +95,7 @@ class SchedulerDao:
         O booleano 'grade' será verdadeiro para atualizar a nota, falso para atualizar o status.
         """
         self.session.rollback()
-        if not all((student, subject, exam_type, newval)):
+        if not all((student, subject, exam_type, newval is not None)):
             return 2
         else:
             try:
@@ -110,7 +109,11 @@ class SchedulerDao:
                     return 3
                 else:
                     if grade:
-                        exam.grade = round(newval, 1)
+                        if int(exam.status) != 1:
+                            self.session.rollback()
+                            return 4
+                        else:
+                            exam.grade = round(newval, 1)
                     else:
                         if isinstance(newval, str):
                             exam.status = ['OK', 'EPN', 'PND'].index(newval) + 1

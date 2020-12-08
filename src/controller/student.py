@@ -1,6 +1,6 @@
 # Módulo de controle de estudantes.
 import time
-from controller.misc import split_args, dprint, smoothen
+from controller.misc import split_args, dprint, smoothen, uni_avg, avg
 from controller import stdao, scdao
 from discord.ext import commands
 from model.student import Student
@@ -11,7 +11,7 @@ class StudentController(commands.Cog):
         self.bot = bot
 
     @commands.command('st')
-    async def student_controller(self, ctx: commands.Context):
+    async def select_command(self, ctx: commands.Context):
         command = next(iter(split_args(ctx.message.content)), "").lower()
 
         if command == "cadastrar":
@@ -126,14 +126,43 @@ class StudentController(commands.Cog):
             command = next(iter(split_args(ctx.message.content, prefixed=True)), None)
             if command is not None:
                 command = command.lower()
+
             start = time.time()
-            cur_subjects = scdao.find(cur_student, exams=True)
-            # parse to strings afterward
+            enrollments = scdao.find(cur_student, exams=True)
+
+            # parse to strings afterward, if applicable
             cur_strings = []
-            for reg in cur_subjects:
-                composite = str(reg.subject.code) + ' | '
-                composite += ' | '.join([f"{exam.show_type()}: {exam.show_status()}" for exam in reg.eager_exams])
-                cur_strings.append(composite)
+            if enrollments is not None:
+                semester_avg = []
+                av2_delivered = []
+                for reg in enrollments:
+                    composite = str(reg.subject.code) + ' | '
+                    if command == 'completo':  # MT1 | AV1: STS (10.0) | APS1: STS (10.0) | AV2: STS (10.0) | APS2: STS (10.0) | AV3: STS (10.0)
+                        composite += ' | '.join([f"{exam.show_type()}: {exam.show_status()} ({exam.show_grade()})" for exam in reg.eager_exams])
+
+                    elif command == 'notas':  # MT1 | AV1: 10.0 | APS1: 10.0 | AV2: 10.0 | APS2: 10.0 | AV3: 10.0
+                        composite += ' | '.join([f"{exam.show_type()}: {exam.show_grade()}" for exam in reg.eager_exams])
+
+                    elif command == 'médias' or command == 'medias':  # MT1 | Média: 10.0 | Status: Aprovado (se AV2 OK)
+                        average = uni_avg(*[exam.grade for exam in reg.eager_exams])
+                        semester_avg.append(average)
+                        composite += ' | '.join([f"Média {average}"])
+                        finished = False
+                        for exam in reg.eager_exams:
+                            if exam.exam_type == 2 and exam.status == 1:
+                                composite += f" | Status: { (lambda: 'Aprovado' if average >= 7 else 'Reprovado')() }"
+                                finished = True
+                                break
+                        av2_delivered.append(finished)
+
+                    else:  # MT1 | AV1: STS | APS1: STS | AV2: STS | APS2: STS | AV3: STS
+                        composite += ' | '.join([f"{exam.show_type()}: {exam.show_status()}" for exam in reg.eager_exams])
+                    cur_strings.append(composite)
+                enrollments.clear()
+                if command == 'médias' or command == 'medias':
+                    semester_avg = round(avg(semester_avg), 2)
+                    savg_msg = f"CR do semestre: {semester_avg}"
+                    cur_strings.extend(('---', savg_msg))
 
             composite_message = f"Seus dados: ```{smoothen(str(cur_student))}```"
             if cur_strings:

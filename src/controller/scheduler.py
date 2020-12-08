@@ -59,13 +59,21 @@ class ScheduleController(commands.Cog):
         arguments = split_args(ctx.message.content, prefixed=True)
         invalid_syntax = "Sintaxe: `>>sc nota codigo trabalho novanota antigo?` - 'antigo' é opcional: sim ou não.\nExemplo: `>>sc nota AL1 AV1 9.5`"
         invalid_syntax += "\nSe tentar mudar a nota para uma matéria de um semestre anterior, terá que especificar 'sim' em antigo."
+        grade_too_high = "A nota especificada é mais alta que o permitido:"
         if len(arguments) < 3:
             await ctx.send(invalid_syntax)
         else:
+            exam_types = ('AV1', 'APS1', 'AV2', 'APS2', 'AV3')
+            max_grades = (7.0, 3.0, 8.0, 2.0, 10.0)
             try:
                 arguments[0] = arguments[0].upper()
-                arguments[1] = ('AV1', 'APS1', 'AV2', 'APS2', 'AV3').index(arguments[1].upper()) + 1
-                arguments[2] = float(arguments[2])
+                arguments[1] = exam_types.index(arguments[1].upper()) + 1
+
+                # grade constraints
+                arguments[2] = abs(float(arguments[2]))
+                if arguments[2] > max_grades[arguments[1] - 1]:
+                    raise SyntaxError("Grade is too high")
+
                 if len(arguments) > 4:
                     arguments = arguments[0:3:1]
                 if len(arguments) == 4:
@@ -74,20 +82,26 @@ class ScheduleController(commands.Cog):
                     arguments.append(False)
                 if len(arguments[0]) != 3:
                     raise SyntaxError("Subject code length is not 3")
-            except Exception:
-                await ctx.send(invalid_syntax)
+            except Exception as e:
+                if 'Grade' in str(e) and isinstance(e, SyntaxError):
+                    await ctx.send(f"{grade_too_high} `{arguments[2]} > {max_grades[arguments[1] - 1]}`")
+                else:
+                    await ctx.send(invalid_syntax)
                 return
 
             sbj: Subject = sbdao.find_one_by_code(arguments[0])
             res = scdao.update(student=student, subject=sbj, exam_type=arguments[1], newval=arguments[2], current=arguments[3], grade=True)
-            if res == 0:
-                await ctx.send(f"Nota alterada: ```{smoothen(f'{sbj.fullname} | {arguments[1]}: {round(arguments[2], 1)}')}```")
-            elif res == 2:
-                await ctx.send(invalid_syntax)
-            elif res == 3:
-                await ctx.send("O trabalho para a matéria especificada não foi encontrado.")
+            responses = (
+                f"Nota alterada: ```{smoothen(f'{sbj.fullname} | {exam_types[arguments[1] - 1]}: {round(arguments[2], 1)}')}```",
+                "Algo deu errado. Consulte o log para mais detalhes.",
+                invalid_syntax,
+                "O trabalho para a matéria especificada não foi encontrado.",
+                "Você não pode alterar a nota para um trabalho que não foi entregue ainda."
+            )
+            if res not in range(len(responses)):
+                await ctx.send(responses[1])
             else:
-                await ctx.send("Algo deu errado. Consulte o log para mais detalhes.")
+                await ctx.send(responses[res])
 
     async def update_status(self, ctx: commands.Context, student: Student):
         arguments = split_args(ctx.message.content, prefixed=True)
@@ -108,17 +122,19 @@ class ScheduleController(commands.Cog):
                         arguments[2] = 3
                     else:
                         arguments[2] = statuses.index(arguments[2].upper()) + 1
-            except Exception as e:
+            except Exception:
                 await ctx.send(invalid_syntax)
                 return
 
             sbj: Subject = sbdao.find_one_by_code(arguments[0])
             res = scdao.update(student=student, subject=sbj, exam_type=arguments[1], newval=arguments[2], grade=False)
-            if res == 0:
-                await ctx.send(f"Status alterado: ```{smoothen(f'{sbj.fullname} | {exam_types[arguments[1] - 1]}: {statuses[arguments[2] - 1]}')}```")
-            elif res == 2:
-                await ctx.send(invalid_syntax)
-            elif res == 3:
-                await ctx.send("O trabalho para a matéria especificada não foi encontrado.")
+            responses = (
+                f"Status alterado: ```{smoothen(f'{sbj.fullname} | {exam_types[arguments[1] - 1]}: {statuses[arguments[2] - 1]}')}```",
+                "Algo deu errado. Consulte o log para mais detalhes.",
+                invalid_syntax,
+                "O trabalho para a matéria especificada não foi encontrado."
+            )
+            if res not in range(len(responses)):
+                await ctx.send(responses[1])
             else:
-                await ctx.send("Algo deu errado. Consulte o log para mais detalhes.")
+                await ctx.send(responses[res])

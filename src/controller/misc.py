@@ -12,11 +12,23 @@ daedalus_environment = getenv("DAEDALUS_ENV").upper()
 debug = bool(daedalus_environment == "DSV")
 
 
+# i don't trust statistics.median, it's not an average
+def avg(items: Union[list, tuple, set]):
+    return sum(items) / len(items)
+
+
+def uni_avg(av1: float, aps1: float, av2: float, aps2: float, av3: float):
+    items = [av1 + aps1, av2 + aps2, av3]
+    items.remove(min(items))
+    return round(avg(items), 1)
+
+
 def split_args(arguments: str, prefixed=False, islist=True):
     arguments = arguments.split(' ')
     if arguments[0] == 'Roger':
         arguments.pop(0)
 
+    # for commands like >>st ver, so 'ver' doesn't get treated as an argument
     if prefixed:
         arguments.pop(1)
 
@@ -31,6 +43,7 @@ def arg_types(arguments: Iterable, repr=False):
     arg_with_types = {0: [], 1: [], 2: []}
     for x in arguments:
         x = str(x)
+        # if one dot and string without dots is numeric = float
         if x.count('.') == 1 and x.replace('.', '').isnumeric():
             arg_with_types[0].append(x)
         elif x.isnumeric():
@@ -49,6 +62,12 @@ def dprint(message: str):
 
 
 def smoothen(message: Iterable, complement=False):
+    """
+    Recebe um iterável e o formata numa caixinha.
+    Feito para lidar especialmente com strings ou listas/tuplas/conjuntos/dicionários de strings.
+
+    Para dicionários, somente os valores, convertidos para string, são 'encaixados'.
+    """
     if isinstance(message, Union[list, tuple, set].__args__):
         message = [str(x) for x in message]
         dashes = len(max(message, key=len))
@@ -65,7 +84,12 @@ def smoothen(message: Iterable, complement=False):
         formatted_message += f'| {message} |\n'
     else:
         for string in message:
-            formatted_message += f'| {string}{" " * (dashes - 1 - len(string))}|\n'
+            spaces = dashes - 1 - len(string)
+            # if string is just a string of dashes, extend it until end of line if it's not there already
+            if string == len(string) * '-' and spaces > 1:
+                string += '-' * (spaces - 1)
+                spaces = 1
+            formatted_message += f'| {string}{" " * spaces}|\n'
 
     formatted_message += f'+{"-" * dashes}+\n'
     return formatted_message

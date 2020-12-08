@@ -12,7 +12,7 @@ class SubjectController(commands.Cog):
         self.read_only_cmds = {'buscar', 'todas'}
 
     @commands.command('mt')
-    async def subject_controller(self, ctx: commands.Context):
+    async def select_command(self, ctx: commands.Context):
         # Usuários comuns só têm acesso aos comandos read-only.
         command = next(iter(split_args(ctx.message.content)), "").lower()
 

@@ -36,11 +36,11 @@ from model.registered import Registered
 # Inicialização
 daedalus_token = getenv("DAEDALUS_TOKEN")
 bot = commands.Bot(command_prefix=['>>', 'Roger '])
-daedalus_version = '0.4.3'
+daedalus_version = '0.6.1'
 daedalus_environment = getenv("DAEDALUS_ENV").upper()
 initialize_sql(engin)
-# if daedalus_environment == "DSV":
-#     initialize_sql(dsvengin)
+if daedalus_environment == "DSV":
+    initialize_sql(dsvengin)
 
 
 # Cogs
