@@ -122,7 +122,7 @@ class ScheduleController(commands.Cog):
                 return
 
             sbj: Subject = self.sbdao.find_one_by_code(arguments[0])
-            res = self.scdao.update(student=student, subject=sbj, exam_type=arguments[1], newval=arguments[2], current=arguments[3], grade=True)
+            res = self.scdao.update(student=student, subject=sbj.id, exam_type=arguments[1], newval=arguments[2], current=arguments[3], grade=True)
             responses = (
                 f"Nota alterada: ```{smoothen(f'{sbj.fullname} | {exam_types[arguments[1] - 1]}: {round(arguments[2], 1)}')}```",
                 "Algo deu errado. Consulte o log para mais detalhes.",
@@ -167,7 +167,8 @@ class ScheduleController(commands.Cog):
                 return
 
             sbj: Subject = self.sbdao.find_one_by_code(arguments[0])
-            res = self.scdao.update(student=student, subject=sbj, exam_type=arguments[1], newval=arguments[2], grade=False)
+            print(f'newval = {arguments[2]}')
+            res = self.scdao.update(student=student, subject=sbj.id, exam_type=arguments[1], newval=arguments[2], grade=False)
             responses = (
                 f"Status alterado: ```{smoothen(f'{sbj.fullname} | {exam_types[arguments[1] - 1]}: {statuses[arguments[2] - 1]}')}```",
                 "Algo deu errado. Consulte o log para mais detalhes.",
