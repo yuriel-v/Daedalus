@@ -46,9 +46,9 @@ class SubjectController(commands.Cog):
         else:
             try:
                 ret = sbdao.insert(code=arguments[0], fullname=' '.join(arguments[2::]), semester=abs(int(arguments[1])))
-                if ret == 1:
+                if ret == 2:
                     await ctx.send("Sintaxe inválida. Exemplo: `>>mt add BD2 4 Banco de Dados II`.")
-                elif ret == 2:
+                elif ret == 1:
                     await ctx.send("Alguma coisa deu errado. Consulte o log para detalhes.")
                 else:
                     await ctx.send("Matéria registrada com sucesso.")

@@ -2,7 +2,6 @@
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, Float, ForeignKey
-from sqlalchemy.sql.schema import UniqueConstraint
 from model.registered import Registered
 from model import Base
 
@@ -15,7 +14,7 @@ class Exam(Base):
     status = Column(Integer)                                                   # Status
     grade = Column(Float)                                                      # Nota
 
-    registry = relationship("Registered", back_populates="exams")
+    registry = relationship("Registered", back_populates="exams", lazy="joined")
 
     def reset(self):
         self.status = 3

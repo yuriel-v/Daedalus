@@ -1,11 +1,13 @@
 from typing import Union
+
+from sqlalchemy.orm.session import Session
 from model.student import Student
 from dao import smkr
 
 
 class StudentDao:
     def __init__(self):
-        self.session = smkr()
+        self.session: Session = smkr()
 
     def expunge_all(self):
         self.session.expunge_all()
@@ -14,7 +16,10 @@ class StudentDao:
         self.session.expunge(std)
 
     def insert(self, discord_id: str, name: str, registry: int):
-        self.session.rollback()
+        try:
+            self.session.rollback()
+        except Exception as e:
+            print(f"Caught during rollback: {e}")
         retval = None
         # integrity checks
         try:  # in case some funny asshat decides to put a string as registry
@@ -43,7 +48,10 @@ class StudentDao:
         return retval
 
     def find(self, filter: Union[int, str]):
-        self.session.rollback()
+        try:
+            self.session.rollback()
+        except Exception as e:
+            print(f"Caught during rollback: {e}")
         if len(filter) == 0:
             return None
         else:
@@ -55,15 +63,31 @@ class StudentDao:
             return q.all()
 
     def find_by_discord_id(self, discord_id: int):
-        self.session.rollback()
+        try:
+            self.session.rollback()
+        except Exception as e:
+            print(f"Caught during rollback: {e}")
         return self.session.query(Student).filter(Student.discord_id == discord_id).first()
 
     def find_all(self):
-        self.session.rollback()
+        try:
+            self.session.rollback()
+        except Exception as e:
+            print(f"Caught during rollback: {e}")
         return self.session.query(Student).all()
 
+    def find_all_ids(self):
+        try:
+            self.session.rollback()
+        except Exception as e:
+            print(f"Caught during rollback: {e}")
+        return tuple([std.discord_id for std in self.session.query(Student).all()])
+
     def update(self, discord_id: int, name=None, registry=None):
-        self.session.rollback()
+        try:
+            self.session.rollback()
+        except Exception as e:
+            print(f"Caught during rollback: {e}")
         cur_student = self.session.query(Student).filter(Student.discord_id == discord_id).first()
 
         if cur_student is None:
@@ -84,7 +108,10 @@ class StudentDao:
         return 0
 
     def delete(self, discord_id: int):
-        self.session.rollback()
+        try:
+            self.session.rollback()
+        except Exception as e:
+            print(f"Caught during rollback: {e}")
 
         try:
             d = self.session.query(Student).filter(Student.discord_id == discord_id)

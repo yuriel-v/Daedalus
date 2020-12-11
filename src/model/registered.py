@@ -22,9 +22,8 @@ class Registered(Base):
     active = Column(Boolean)
 
     student = relationship('Student', back_populates='registered_on')
-    subject = relationship('Subject', back_populates='registered_by')
-    exams = relationship('Exam', back_populates='registry')
-    eager_exams = []
+    subject = relationship('Subject', back_populates='registered_by', lazy='joined')
+    exams = relationship('Exam', back_populates='registry', order_by="Exam.exam_type", lazy="joined")
 
     def is_current(self):
         cur_semester = date(day=1, year=date().today().year, month=(lambda: 1 if date.today().month < 7 else 7)())

@@ -10,26 +10,31 @@ from model.subject import Subject
 class ScheduleController(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.reg_students = stdao.find_all_ids()
 
     @commands.command('sc')
-    async def select_command(self, ctx):
+    async def select_command(self, ctx: commands.Context):
         command = next(iter(split_args(ctx.message.content)), "").lower()
         if not command:
             await ctx.send("Sintaxe: `>>sc comando argumentos`")
         else:
-            student = stdao.find_by_discord_id(ctx.author.id)
-            if student is None:
+            registered = True
+            if ctx.author.id not in self.reg_students:
+                self.reg_students = stdao.find_all_ids()
+                registered = ctx.author.id in self.reg_students
+            if not registered:
                 await ctx.send("Você não está cadastrado. Use o comando `>>st cadastrar` para isso.")
-            elif command == "matricular":
-                await self.sign_up(ctx, student)
-            elif command == "trancar":
-                pass
-            elif command == "nota":
-                await self.update_grade(ctx, student)
-            elif command == "sts" or command == "status":
-                await self.update_status(ctx, student)
             else:
-                await ctx.send("Comando inválido. Sintaxe: `>>sc comando argumentos`")
+                if command == "matricular":
+                    await self.sign_up(ctx, stdao.find_by_discord_id(ctx.author.id))
+                elif command == "trancar":
+                    await self.lock_enrollment(ctx, stdao.find_by_discord_id(ctx.author.id))
+                elif command == "nota":
+                    await self.update_grade(ctx, stdao.find_by_discord_id(ctx.author.id))
+                elif command == "sts" or command == "status":
+                    await self.update_status(ctx, stdao.find_by_discord_id(ctx.author.id))
+                else:
+                    await ctx.send("Comando inválido. Sintaxe: `>>sc comando argumentos`")
 
     async def sign_up(self, ctx: commands.Context, student: Student):
         arguments = split_args(ctx.message.content, prefixed=True)
@@ -40,14 +45,14 @@ class ScheduleController(commands.Cog):
             if len(arguments) > 8:
                 arguments = arguments[0:7:1]  # up to 8 at once only, uni rules
             subjects = sbdao.find_by_code(arguments)
-            subjects = {x for x in subjects if x is not None}
-            subj_names = [f"-> {str(x.code)}: {str(x.fullname)}" for x in subjects]
+            subjects = {x.code: x for x in subjects if x is not None}
+            subj_names = tuple([f"-> {x}: {y.fullname}" for x, y in subjects.items()])
 
             if not subjects:
                 await ctx.send("Matéria(s) inexistente(s).\nUse o comando `>>mt todas` ou `>>mt buscar` para verificar o código da(s) matéria(s) desejada(s).")
             else:
                 stdao.expunge(student)
-                for subj in subjects:
+                for subj in subjects.values():
                     sbdao.expunge(subj)
                 res = scdao.register(student=student, subjects=subjects)
                 if res == 0:
@@ -138,3 +143,32 @@ class ScheduleController(commands.Cog):
                 await ctx.send(responses[1])
             else:
                 await ctx.send(responses[res])
+
+    async def lock_enrollment(self, ctx: commands.Context, student: Student):
+        arguments = split_args(ctx.message.content, prefixed=True)
+        invalid_syntax = "Sintaxe: `>>sc trancar mt1 mt2 ...` - caso `mt1 = 'todas'`, todas as matérias ativas do estudante serão trancadas."
+        if not arguments:
+            await ctx.send(invalid_syntax)
+        else:
+            try:
+                subjects = None
+                if arguments[0] == 'todas':
+                    ret = scdao.lock(student, [], True)
+                else:
+                    subjects = {x.code: x.fullname for x in sbdao.find_by_code(arguments)}
+                    print(f"Subjects: {subjects}")
+                    ret = scdao.lock(student, subjects.keys())
+
+                if ret == 0:
+                    if subjects is None:
+                        ret = "Você trancou todas as suas matrículas."
+                    else:
+                        ret = f"Matrículas trancadas com sucesso: ```{smoothen([f'-> {x}' for x in subjects.values()])}```"
+                elif ret == 2:
+                    ret = invalid_syntax
+                else:
+                    ret = "Algo deu errado. Consulte o log para mais detalhes."
+
+                await ctx.send(ret)
+            except Exception as e:
+                print(f'Exception caught during enrollment locking: {e}')

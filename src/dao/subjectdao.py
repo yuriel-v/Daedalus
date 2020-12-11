@@ -1,11 +1,12 @@
 from sqlalchemy import literal
+from sqlalchemy.orm.session import Session
 from model.subject import Subject
 from dao import smkr
 
 
 class SubjectDao:
     def __init__(self):
-        self.session = smkr()
+        self.session: Session = smkr()
 
     def expunge_all(self):
         self.session.expunge_all()
@@ -14,9 +15,12 @@ class SubjectDao:
         self.session.expunge(sbj)
 
     def insert(self, code: str, fullname: str, semester: int):
-        self.session.rollback()
+        try:
+            self.session.rollback()
+        except Exception as e:
+            print(f"Caught during rollback: {e}")
         if len(code) != 3 or len(fullname) == 0:
-            return 1  # invalid data
+            return 2  # invalid data
         else:
             try:
                 self.session.add(Subject(code=code.upper(), fullname=fullname, semester=abs(semester)))
@@ -26,10 +30,13 @@ class SubjectDao:
             except Exception as e:
                 print(f"Exception caught on SubjectDao: {e}")
                 self.session.rollback()
-                return 2  # ???
+                return 1  # ???
 
     def find(self, filter: str, exists=False, by_key=True):
-        self.session.rollback()
+        try:
+            self.session.rollback()
+        except Exception as e:
+            print(f"Caught during rollback: {e}")
         if len(filter) == 0:
             return []
         else:
@@ -63,7 +70,10 @@ class SubjectDao:
         Todos os códigos nessa lista necessariamente têm que ser de comprimento 3,
         logo códigos incompletos não vão ser reconhecidos, assim sendo descartados.
         """
-        self.session.rollback()
+        try:
+            self.session.rollback()
+        except Exception as e:
+            print(f"Caught during rollback: {e}")
         if not filter:
             return []
         else:
@@ -77,7 +87,10 @@ class SubjectDao:
             return q
 
     def find_one_by_code(self, code: str):
-        self.session.rollback()
+        try:
+            self.session.rollback()
+        except Exception as e:
+            print(f"Caught during rollback: {e}")
         if len(code) != 3:
             return None
         else:
@@ -85,7 +98,10 @@ class SubjectDao:
             return self.session.query(Subject).filter(Subject.code == code).first()
 
     def find_by_semester(self, semester: int):
-        self.session.rollback()
+        try:
+            self.session.rollback()
+        except Exception as e:
+            print(f"Caught during rollback: {e}")
         if semester > 8 or semester < 0:
             return []
         else:
@@ -118,11 +134,17 @@ class SubjectDao:
             res.append(Subject(id=row['id'], code=row['code'], fullname=row['fullname'], semester=row['semester']))
         return res
         """
-        self.session.rollback()
+        try:
+            self.session.rollback()
+        except Exception as e:
+            print(f"Caught during rollback: {e}")
         return self.session.query(Subject).all()
 
     def update(self, code: str, newcode=None, fullname=None, semester=None):
-        self.session.rollback()
+        try:
+            self.session.rollback()
+        except Exception as e:
+            print(f"Caught during rollback: {e}")
         if newcode is None and fullname is None and (semester is None or int(semester) not in range(0, 9)):
             return 1  # invalid syntax
         else:
