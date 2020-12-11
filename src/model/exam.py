@@ -2,7 +2,6 @@
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, Float, ForeignKey
-from sqlalchemy.sql.schema import UniqueConstraint
 from model.registered import Registered
 from model import Base
 
@@ -15,7 +14,7 @@ class Exam(Base):
     status = Column(Integer)                                                   # Status
     grade = Column(Float)                                                      # Nota
 
-    registry = relationship("Registered", back_populates="exams")
+    registry = relationship("Registered", back_populates="exams", lazy="joined")
 
     def reset(self):
         self.status = 3
@@ -35,14 +34,23 @@ class Exam(Base):
         else:
             return "ERR"
 
-# Status:
-# - 1: OK
-# - 2: Entrega pendente (tarefa concluída/parcialmente concluída)
-# - 3: Pendente
-#
-# Tipo de trabalho:
-# - 1: Prova AV1 (7pt)
-# - 2: Trabalho AV1 (3pt)
-# - 3: Prova AV2 (8pt)
-# - 4: Trabalho AV2 (2pt)
-# - 5: Prova AV3 (10pt)
+    def show_grade(self):
+        if self.status != 1:
+            return '?.?'
+        else:
+            return round(self.grade, 1)
+
+
+"""
+Status:
+- 1: OK
+- 2: Entrega pendente (tarefa concluída/parcialmente concluída)
+- 3: Pendente
+
+Tipo de trabalho:
+- 1: Prova AV1 (7pt)
+- 2: Trabalho AV1 (3pt)
+- 3: Prova AV2 (8pt)
+- 4: Trabalho AV2 (2pt)
+- 5: Prova AV3 (10pt)
+"""

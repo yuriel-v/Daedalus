@@ -51,8 +51,8 @@ class Games(commands.Cog):
     async def russian_roulette(self, ctx):
         """
         Roleta russa com N opções. Se o trigger cair no meio delas, você vai morrer por (opções / 2) minutos. 6 opções por padrão.\n
-        Sintaxe: >>rr opções\n
-        Exemplo: >>rr 10\n
+        - Sintaxe: `rr opções`\n
+        - Exemplo: `rr 10`\n
         P.S. Não chame o bot de diabo e mande ele morrer ao mesmo tempo, ele fica nervoso.
         """
         arguments = split_args(ctx.message.content)
