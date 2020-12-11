@@ -40,14 +40,17 @@ class Exam(Base):
         else:
             return round(self.grade, 1)
 
-# Status:
-# - 1: OK
-# - 2: Entrega pendente (tarefa concluída/parcialmente concluída)
-# - 3: Pendente
-#
-# Tipo de trabalho:
-# - 1: Prova AV1 (7pt)
-# - 2: Trabalho AV1 (3pt)
-# - 3: Prova AV2 (8pt)
-# - 4: Trabalho AV2 (2pt)
-# - 5: Prova AV3 (10pt)
+
+"""
+Status:
+- 1: OK
+- 2: Entrega pendente (tarefa concluída/parcialmente concluída)
+- 3: Pendente
+
+Tipo de trabalho:
+- 1: Prova AV1 (7pt)
+- 2: Trabalho AV1 (3pt)
+- 3: Prova AV2 (8pt)
+- 4: Trabalho AV2 (2pt)
+- 5: Prova AV3 (10pt)
+"""

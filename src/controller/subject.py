@@ -1,18 +1,26 @@
 # Módulo de controle de matérias.
 # Nota: Somente o proprietário do bot pode invocar esses comandos!
 from os import getenv
-from controller.misc import smoothen, split_args, dprint
+from controller.misc import smoothen, split_args
 from discord.ext import commands
-from controller import sbdao
+from dao.subjectdao import SubjectDao
 
 
 class SubjectController(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.read_only_cmds = {'buscar', 'todas'}
+        self.sbdao = SubjectDao()
+
+    async def cog_after_invoke(self, ctx):
+        self.sbdao.sclear()
 
     @commands.command('mt')
     async def select_command(self, ctx: commands.Context):
+        """
+        Comando mestre para o cog Subject Controller.
+        - P.S. Usuários que não forem o proprietário do bot só podem visualizar matérias (read-only).
+        """
         # Usuários comuns só têm acesso aos comandos read-only.
         command = next(iter(split_args(ctx.message.content)), "").lower()
 
@@ -31,21 +39,19 @@ class SubjectController(commands.Cog):
 
     async def add_subject(self, ctx: commands.Context):
         """
-        Adiciona uma matéria nova. O campo 'CDE' (código) deve ser uma sigla de,
-        precisamente, 3 letras que unicamente representem a matéria (ou seja,
-        nenhuma matéria pode ter a mesma sigla que outra matéria). Já o campo 'SM'
-        é um inteiro de 0-8 indicando o semestre. Semestre 0 é para matérias eletivas.
-
-        Sintaxe: `mt add CDE SM Nome da Matéria`
-
-        Exemplo: `mt add BD2 4 Banco de Dados II`
+        Adiciona uma matéria nova.
+        - Sintaxe: `mt add CDE SM Nome da Matéria`, onde:
+          - `CDE`: Código, uma sigla de precisamente 3 letras, única entre todas as matérias registradas.
+          - `SM`: Semestre, um número inteiro de 0-8 indicando o semestre.
+            - Semestre 0 significa que a matéria é eletiva (elo).
+          - Exemplo: `mt add BD2 4 Banco de Dados II`
         """
         arguments = split_args(ctx.message.content, prefixed=True)
         if len(arguments) <= 2:
             await ctx.send("Sintaxe inválida. Exemplo: `>>mt add BD2 4 Banco de Dados II`.")
         else:
             try:
-                ret = sbdao.insert(code=arguments[0], fullname=' '.join(arguments[2::]), semester=abs(int(arguments[1])))
+                ret = self.sbdao.insert(code=arguments[0], fullname=' '.join(arguments[2::]), semester=abs(int(arguments[1])))
                 if ret == 2:
                     await ctx.send("Sintaxe inválida. Exemplo: `>>mt add BD2 4 Banco de Dados II`.")
                 elif ret == 1:
@@ -58,21 +64,18 @@ class SubjectController(commands.Cog):
 
     async def find_subject(self, ctx: commands.Context):
         """
-        Procura uma matéria existente. Se o nome dado for de comprimento 3 ou
-        menor, uma busca por código é realizada. Senão, uma busca por nome
-        completo é realizada. Caso o filtro especificado for numérico, retorna
-        todas as matérias do semestre especificado.
-
-        Sintaxe: `mt buscar filtro`
-
-        Exemplos: `mt buscar banco`, `mt buscar bd` ou `mt buscar 4`
+        Procura uma matéria existente.
+        - Sintaxe: `mt buscar filtro`, onde `filtro` pode ser:
+          - Uma string de 3 ou menos caracteres, caracterizando uma busca por código;
+          - Uma string de 4 ou mais caracteres, caracterizando uma busca por nome.
+          - Exemplos: `mt buscar banco` ou `mt buscar bd`
         """
         subject = split_args(ctx.message.content, prefixed=True)
         if len(subject) == 0 or not subject[1].isnumeric():
-            await ctx.send("Sintaxe inválida. Exemplos: `>>mt buscar banco`, `mt buscar bd` ou `mt buscar 4`.")
+            await ctx.send("Sintaxe inválida. Exemplos: `>>mt buscar banco` ou `mt buscar bd`.")
         else:
             try:
-                matches = sbdao.find(' '.join(subject))
+                matches = self.sbdao.find(' '.join(subject))
                 if matches is None:
                     await ctx.send("Alguma coisa deu errado. Consulte o log para detalhes.")
                 elif len(matches) == 0:
@@ -86,11 +89,9 @@ class SubjectController(commands.Cog):
     async def find_all(self, ctx: commands.Context):
         """
         Retorna uma lista com todas as matérias cadastradas.
-        Para evitar spam, o semestre deve ser informado.
-
-        Sintaxe: `mt todas sem`
-
-        Exemplo: `mt todas primeiro`
+        - Para evitar spam, o semestre deve ser informado.
+        - Sintaxe: `mt todas sem`
+          - Exemplo: `mt todas primeiro`
         """
         arguments = split_args(ctx.message.content, prefixed=True)
         syntax_error = "Sintaxe inválida. Exemplo: `>>mt todas primeiro`."
@@ -111,7 +112,7 @@ class SubjectController(commands.Cog):
                 await ctx.send(syntax_error)
                 return
 
-        all_subjects = sbdao.find_by_semester(sem)
+        all_subjects = self.sbdao.find_by_semester(sem)
         if len(all_subjects) == 0:
             await ctx.send("Registro(s) não encontrado(s).")
         else:
@@ -122,12 +123,12 @@ class SubjectController(commands.Cog):
     async def edit_subject(self, ctx: commands.Context):
         """
         Edita uma matéria em específico.
-
-        Sintaxe: `mt editar mtr cmp newval`, onde `mtr = matéria (código)`,
-        `cmp = campo` ('nome', 'cod', 'sem' ou 'todos') e `newval = novo valor`.
-
-        Exemplos: `mt editar AL1 cod ALG`, `mt editar AL1 nome Algoritmos 1`,
-        `mt editar AL1 sem 1` ou `mt editar AL1 todos ALG 0 Algoritmos 1`
+        - Sintaxe: `mt editar mtr cmp newval`, onde:
+          - `mtr`: Código da matéria;
+          - `cmp`: Campo a editar (`nome`, `cod`, `sem` ou `todos`);
+          - `newval`: Novo valor.
+          - Exemplos: `mt editar AL1 cod ALG`, `mt editar AL1 nome Algoritmos 1`,
+            `mt editar AL1 sem 1` ou `mt editar AL1 todos ALG 0 Algoritmos 1`
         """
         arguments = split_args(ctx.message.content, prefixed=True)
         syntax_error = "Sintaxe inválida. Exemplos: `mt editar AL1 cod ALG`, `mt editar AL1 nome Algoritmos 1`, "
@@ -140,16 +141,16 @@ class SubjectController(commands.Cog):
             arguments[0] = arguments[0].upper()
             arguments[1] = arguments[1].lower()
             if arguments[1] == 'cod':
-                res = sbdao.update(arguments[0], newcode=arguments[2].upper())
+                res = self.sbdao.update(arguments[0], newcode=arguments[2].upper())
                 op = 2
             elif arguments[1] == 'nome':
-                res = sbdao.update(arguments[0], fullname=' '.join(arguments[2::]))
+                res = self.sbdao.update(arguments[0], fullname=' '.join(arguments[2::]))
                 op = 0
             elif arguments[1] == 'todos' and len(arguments) >= 5:
-                res = sbdao.update(code=arguments[0], newcode=arguments[2].upper(), semester=abs(int(arguments[3])), fullname=' '.join(arguments[4::]))
+                res = self.sbdao.update(code=arguments[0], newcode=arguments[2].upper(), semester=abs(int(arguments[3])), fullname=' '.join(arguments[4::]))
                 op = 2
             elif arguments[1] == 'sem' and arguments[2].isnumeric():
-                res = sbdao.update(code=arguments[0], semester=abs(int(arguments[2])))
+                res = self.sbdao.update(code=arguments[0], semester=abs(int(arguments[2])))
                 op = 0
             else:
                 res = 1
@@ -161,7 +162,7 @@ class SubjectController(commands.Cog):
             elif res == 3:
                 await ctx.send("Alguma coisa deu errado. Consulte o log para detalhes.")
             else:
-                edited_sbj = sbdao.find(arguments[op].upper())
+                edited_sbj = self.sbdao.find(arguments[op].upper())
                 if len(edited_sbj) == 0:
                     await ctx.send("Alguma coisa deu errado. Consulte o log para detalhes.")
                 else:

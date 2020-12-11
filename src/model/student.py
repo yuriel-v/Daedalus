@@ -10,7 +10,7 @@ class Student(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String)
-    registry = Column(Integer)          # matrícula
+    registry = Column(Integer)  # matrícula
     discord_id = Column(BigInteger, nullable=False, unique=True)
 
     registered_on = relationship('Registered', back_populates='student', cascade="all, delete-orphan")

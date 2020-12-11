@@ -1,7 +1,8 @@
 # Módulo de controle de estudantes.
 import time
 from controller.misc import split_args, dprint, smoothen, uni_avg, avg, nround
-from controller import stdao, scdao
+from dao.schedulerdao import SchedulerDao
+from dao.studentdao import StudentDao
 from discord.ext import commands
 from model.student import Student
 
@@ -9,9 +10,18 @@ from model.student import Student
 class StudentController(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.stdao = StudentDao()
+        self.scdao = SchedulerDao()
+
+    async def cog_after_invoke(self, ctx):
+        self.stdao.sclear()
+        self.scdao.sclear()
 
     @commands.command('st')
     async def select_command(self, ctx: commands.Context):
+        """
+        Comando mestre para o cog Student Controller.
+        """
         command = next(iter(split_args(ctx.message.content)), "").lower()
 
         if command == "cadastrar":
@@ -32,12 +42,9 @@ class StudentController(commands.Cog):
     async def add_student(self, ctx: commands.Context):
         """
         Cadastra o usuário que invocou o comando.
-
-        Sintaxe: `st cadastrar matricula nome completo`
-
-        Ex.: `st cadastrar 2020123456 Celso Souza`
-
-        O sistema não permite o cadastro de um usuário já cadastrado.
+        - O sistema não permite o cadastro de um usuário já cadastrado.
+        - Sintaxe: `st cadastrar matricula nome completo`
+          - Exemplo: `st cadastrar 2020123456 Celso Souza`
         """
 
         arguments = split_args(ctx.message.content, prefixed=True)
@@ -45,12 +52,12 @@ class StudentController(commands.Cog):
             await ctx.send("Sintaxe inválida. Exemplo: `>>st cadastrar 2020123456 Celso Souza`.")
 
         else:
-            re = stdao.insert(name=' '.join(arguments[1::]), registry=arguments[0], discord_id=ctx.author.id)
+            re = self.stdao.insert(name=' '.join(arguments[1::]), registry=arguments[0], discord_id=ctx.author.id)
             if re == 0:
                 await ctx.send("Cadastro realizado com sucesso.")
-            elif re == 1:
-                await ctx.send("Sintaxe inválida. Exemplo: `>>st cadastrar 2020123456 Celso Souza`.")
             elif re == 2:
+                await ctx.send("Sintaxe inválida. Exemplo: `>>st cadastrar 2020123456 Celso Souza`.")
+            elif re == 3:
                 await ctx.send("Você já está cadastrado.")
             else:
                 await ctx.send("Algo deu errado - cadastro não realizado.")
@@ -58,11 +65,9 @@ class StudentController(commands.Cog):
     async def check_student(self, ctx: commands.Context):
         """
         Busca os dados de um estudante.
-        O 'filtro' pode ser uma matrícula (numérica) ou um nome (string).
-
-        Sintaxe: `st buscar filtro`
-
-        Ex.: `st buscar 2019123456`
+        - O 'filtro' pode ser uma matrícula (numérica) ou um nome (string).
+        - Sintaxe: `st buscar filtro`
+          - Exemplos: `st buscar 2019123456` ou `st buscar Silva`
         """
 
         arguments = split_args(ctx.message.content, prefixed=True, islist=False)
@@ -77,12 +82,12 @@ class StudentController(commands.Cog):
         if "roger" in arguments.lower():
             roger = True
         if arguments.lower().startswith("comédia"):
-            q = stdao.find_all()
+            q = self.stdao.find_all()
             comedias = True
         elif arguments.lower() == "todos":
-            q = stdao.find_all()
+            q = self.stdao.find_all()
         else:
-            q = stdao.find(arguments)
+            q = self.stdao.find(arguments)
 
         if len(q) == 0:
             await ctx.send("Estudante não encontrado.")
@@ -100,12 +105,12 @@ class StudentController(commands.Cog):
     async def student_exists(self, ctx: commands.Context):
         """
         Verifica se um ID Discord existe no banco de dados ou não.
-
-        Sintaxe: `existe 263169934543028225`
+        - Sintaxe: `existe numeroid`
+          - Exemplo: `existe 263169934543028225`
         """
         disc_id = split_args(ctx.message.content, prefixed=True, islist=False)
         try:
-            exists = stdao.find_by_discord_id(int(disc_id))
+            exists = self.stdao.find_by_discord_id(int(disc_id))
 
             if exists:
                 await ctx.send("ID existente.")
@@ -117,9 +122,17 @@ class StudentController(commands.Cog):
     async def view_self(self, ctx: commands.Context):
         """
         Verifica se a pessoa que invocou o comando está cadastrada no banco de dados.
-        Se sim, então os dados da pessoa são mostrados.
+        - Se sim, então os dados da pessoa são mostrados, juntamente com suas provas e respectivos status.
+        - Aceita um argumento, sendo este o tipo de exibição das matérias:
+          - `completo`: mostra trabalhos como `TRB: STS (nota)`
+          - `notas`: mostra trabalhos como `TRB: nota`
+          - `médias` ou `medias`: ao invés de trabalhos, mostra a média atual da matéria.
+            - Caso a AV2 já tenha sido marcada como OK, mostra também um status "aprovado" ou "reprovado", dependendo da média.
+          - Nada ou qualquer outra coisa além dos já citados: mostra trabalhos como o padrão, `TRB: STS`
+        - Sintaxe: `st ver exibicao`
+          - Exemplo: `st ver notas`
         """
-        cur_student: Student = stdao.find_by_discord_id(ctx.author.id)
+        cur_student: Student = self.stdao.find_by_discord_id(ctx.author.id)
         if cur_student is None:
             await ctx.send("Você não está cadastrado.")
         else:
@@ -128,7 +141,7 @@ class StudentController(commands.Cog):
                 command = command.lower()
 
             start = time.time()
-            enrollments = scdao.find_enrollments(cur_student.id)
+            enrollments = self.scdao.find_enrollments(cur_student.id)
 
             # parse to strings afterward, if applicable
             cur_strings = []
@@ -177,9 +190,10 @@ class StudentController(commands.Cog):
     async def edit_student(self, ctx: commands.Context):
         """
         Edita o cadastro do usuário que invocou o comando.
-        O 'campo' pode ser 'nome' ou 'mtr' (matrícula).
-
-        Sintaxe: `editar campo novo valor`
+        - Sintaxe: `editar campo novo valor`, onde campo pode ser:
+          - `nome`: Edita o nome do estudante;
+          - `mtr`: Edita a matrícula do estudante.
+          - Exemplos: `st editar nome Carlos Eduardo` ou `st editar mtr 2020048596`
         """
 
         arguments = split_args(ctx.message.content, prefixed=True)
@@ -190,10 +204,10 @@ class StudentController(commands.Cog):
         res = None
 
         if str(arguments[0]).lower() == 'nome':
-            res = stdao.update(ctx.author.id, name=' '.join(arguments[1::]))
+            res = self.stdao.update(ctx.author.id, name=' '.join(arguments[1::]))
 
         elif str(arguments[0]).lower() == 'mtr':
-            res = stdao.update(ctx.author.id, registry=int(arguments[1]))
+            res = self.stdao.update(ctx.author.id, registry=int(arguments[1]))
 
         else:
             await ctx.send("Campo inválido - o campo pode ser `nome` ou `mtr`.")
@@ -204,12 +218,13 @@ class StudentController(commands.Cog):
 
         else:
             reply = "Dados alterados."
-            cur_student = stdao.find_by_discord_id(ctx.author.id)
+            cur_student = self.stdao.find_by_discord_id(ctx.author.id)
             reply += f"```{smoothen(str(cur_student))}```"
             await ctx.send(reply)
 
     async def delete_student(self, ctx: commands.Context):
-        if stdao.delete(ctx.author.id) == 0:
+        """Exclui o estudante que chamou o comando."""
+        if self.stdao.delete(ctx.author.id) == 0:
             await ctx.send("O seu cadastro foi excluído com sucesso.")
         else:
-            await ctx.send("Alguma coisa deu errado. Consulte o log para detalhes.")
+            await ctx.send("Algo deu errado. Consulte o log para detalhes.")

@@ -75,6 +75,7 @@ class Roger(commands.Cog):
     async def roger_responde(self, ctx):
         """
         Roger responde: Eu sou bom programador?
+
         Roger diz: SE LASCAR
         """
         if ctx.prefix != 'Roger ':

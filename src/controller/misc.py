@@ -29,8 +29,7 @@ def avg(items: Union[list, tuple, set]):
 def uni_avg(av1: float, aps1: float, av2: float, aps2: float, av3: float):
     """
     Médias de provas, de acordo com os padrões estabelecidos pelo Centro Universitário Carioca (UniCarioca).
-
-    A prova de menor nota é descartada, e a média é feita entre as duas que sobrarem.
+    - A prova de menor nota é descartada, e a média é feita entre as duas que sobrarem.
     """
     items = [av1 + aps1, av2 + aps2, av3]
     items.remove(min(items))
@@ -40,8 +39,7 @@ def uni_avg(av1: float, aps1: float, av2: float, aps2: float, av3: float):
 def split_args(arguments: str, prefixed=False, islist=True) -> Union[list[str], str]:
     """
     Separa os argumentos passados num comando em uma lista de strings, ou em uma string só, caso `islist = False`.
-
-    Use `prefixed = True` quando um comando for separado por espaço, ex.: `st cadastrar mtr nome = ['mtr', 'nome']`.
+    - Use `prefixed = True` quando um comando for separado por espaço, ex.: `st cadastrar mtr nome = ['mtr', 'nome']`.
     """
     arguments = arguments.split(' ')
     if arguments[0] == 'Roger':
@@ -85,9 +83,8 @@ def dprint(message: str):
 def smoothen(message: Iterable):
     """
     Recebe um iterável e o formata numa caixinha.
-    Feito para lidar especialmente com strings ou listas/tuplas/conjuntos/dicionários de strings.
-
-    Para dicionários, somente os valores, convertidos para string, são 'encaixados'.
+    - Feito para lidar especialmente com strings ou listas/tuplas/conjuntos/dicionários de strings.
+    - Para dicionários, somente os valores, convertidos para string, são 'encaixados'.
     """
     if isinstance(message, Union[list, tuple, set].__args__):
         message = [str(x) for x in message]
