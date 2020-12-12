@@ -15,6 +15,9 @@ debug = bool(daedalus_environment == "DSV")
 def nround(number: float, decimals=1):
     """Round, só que normalizado. nround(0.5) = 1"""
     number = str(number)
+    # if decimal places = decimals
+    if len(number[number.index('.')::]) <= decimals + 1:
+        return float(number)
     if number[-1] == '5':
         number = number[:-1:] + '6'
     return round(float(number), decimals)
