@@ -7,7 +7,7 @@ from discord.ext import commands
 from model.student import Student
 
 
-class StudentController(commands.Cog):
+class StudentController(commands.Cog, name='Student Controller'):
     def __init__(self, bot):
         self.bot = bot
         self.stdao = StudentDao()
@@ -224,7 +224,14 @@ class StudentController(commands.Cog):
 
     async def delete_student(self, ctx: commands.Context):
         """Exclui o estudante que chamou o comando."""
-        if self.stdao.delete(ctx.author.id) == 0:
+        confirm = split_args(ctx.message.content, prefixed=True)
+
+        if len(confirm) < 2 or ' '.join(confirm[0:3:1]).lower() != 'tenho cerveja':
+            tem_cerveja = "Você tem cerveja disso? Isso irá apagar todas as suas matrículas e dados associados a elas!\n"
+            tem_cerveja += "Se realmente tem cerveja disso, então use `st excluir tenho cerveja`. Não diga que não avisei!"
+            await ctx.send(tem_cerveja)
+
+        elif self.stdao.delete(ctx.author.id) == 0:
             await ctx.send("O seu cadastro foi excluído com sucesso.")
         else:
             await ctx.send("Algo deu errado. Consulte o log para detalhes.")

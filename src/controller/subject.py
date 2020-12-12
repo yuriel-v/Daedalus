@@ -1,12 +1,12 @@
 # Módulo de controle de matérias.
-# Nota: Somente o proprietário do bot pode invocar esses comandos!
-from os import getenv
+# Nota: Somente o proprietário do bot pode invocar alguns desses comandos!
+from discord.ext.commands.core import is_owner
 from controller.misc import smoothen, split_args
 from discord.ext import commands
 from dao.subjectdao import SubjectDao
 
 
-class SubjectController(commands.Cog):
+class SubjectController(commands.Cog, name='Subject Controller'):
     def __init__(self, bot):
         self.bot = bot
         self.read_only_cmds = {'buscar', 'todas'}
@@ -24,7 +24,7 @@ class SubjectController(commands.Cog):
         # Usuários comuns só têm acesso aos comandos read-only.
         command = next(iter(split_args(ctx.message.content)), "").lower()
 
-        if str(ctx.author.id) != getenv("DAEDALUS_OWNERID") and command not in self.read_only_cmds:
+        if not is_owner(ctx.author) and command not in self.read_only_cmds:
             await ctx.send("Somente o proprietário do bot pode utilizar esse comando.")
             return
 

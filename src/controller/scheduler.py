@@ -8,7 +8,7 @@ from model.student import Student
 from model.subject import Subject
 
 
-class ScheduleController(commands.Cog):
+class ScheduleController(commands.Cog, name='Schedule Controller'):
     def __init__(self, bot):
         self.bot = bot
         self.stdao = StudentDao()
@@ -16,6 +16,14 @@ class ScheduleController(commands.Cog):
         self.scdao = SchedulerDao()
         self.reg_students = self.stdao.find_all_ids()
         self.stdao.sclear()
+
+        self.cmds = {
+            'matricular': self.sign_up,
+            'trancar': self.lock_enrollment,
+            'nota': self.update_grade,
+            'status': self.update_status,
+            'sts': self.update_status
+        }
 
     async def cog_after_invoke(self, ctx):
         self.stdao.sclear()
@@ -39,14 +47,8 @@ class ScheduleController(commands.Cog):
             if not registered:
                 await ctx.send("Você não está cadastrado. Use o comando `>>st cadastrar` para isso.")
             else:
-                if command == "matricular":
-                    await self.sign_up(ctx, self.stdao.find_by_discord_id(ctx.author.id))
-                elif command == "trancar":
-                    await self.lock_enrollment(ctx, self.stdao.find_by_discord_id(ctx.author.id))
-                elif command == "nota":
-                    await self.update_grade(ctx, self.stdao.find_by_discord_id(ctx.author.id))
-                elif command == "sts" or command == "status":
-                    await self.update_status(ctx, self.stdao.find_by_discord_id(ctx.author.id))
+                if command in self.cmds.keys():
+                    await self.cmds[command](ctx, self.stdao.find_by_discord_id(ctx.author.id))
                 else:
                     await ctx.send("Comando inválido. Sintaxe: `>>sc comando argumentos`")
 
@@ -215,3 +217,20 @@ class ScheduleController(commands.Cog):
                 await ctx.send(ret)
             except Exception as e:
                 print(f'Exception caught during enrollment locking: {e}')
+
+    def cog_info(self, command=None):
+        if command is not None and str(command).lower() in self.cmds.keys():
+            reply = self.cmds[str(command)].__doc__
+        else:
+            reply = """
+            sc: Schedule Controller
+            Este módulo foi criado para auxiliar na matrícula e controle de status/notas de provas matriculadas.
+            Somente usuários matriculados pelo módulo 'st' podem utilizar as funções desse módulo!\n
+            Comandos incluem:
+            - sc matricular;
+            - sc trancar;
+            - sc nota;
+            - sc status/sts.
+            """
+
+        return '\n'.join([x.strip() for x in reply.split('\n')]).strip()

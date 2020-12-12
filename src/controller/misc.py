@@ -4,18 +4,23 @@ from typing import Iterable, Union
 from discord.ext import commands
 from sys import getsizeof
 
+from discord.ext.commands.core import is_owner
+from model import initialize_sql
+from model.exam import Exam
+from model.registered import Registered
+
 from model.student import Student
 from model.subject import Subject
-from dao import smkr, dsvsmkr
+from dao import smkr, devsmkr, engin
 
 daedalus_environment = getenv("DAEDALUS_ENV").upper()
-debug = bool(daedalus_environment == "DSV")
+debug = bool(daedalus_environment == "DEV")
 
 
 def nround(number: float, decimals=1):
     """Round, só que normalizado. nround(0.5) = 1"""
     number = str(number)
-    # if decimal places = decimals
+    # if decimal places <= decimals
     if len(number[number.index('.')::]) <= decimals + 1:
         return float(number)
     if number[-1] == '5':
@@ -116,7 +121,7 @@ def smoothen(message: Iterable):
     return formatted_message
 
 
-class Misc(commands.Cog):
+class Misc(commands.Cog, name='Misc'):
     def __init__(self, bot):
         self.bot = bot
 
@@ -152,16 +157,26 @@ class Misc(commands.Cog):
 
             await ctx.send(f"Tamanho de `{numba}`: {getsizeof(numba)} bytes.")
 
+    @commands.command('drop')
+    async def drop_tables(ctx):
+        if not is_owner(ctx.author):
+            await ctx.send("Somente o proprietário pode rodar esse comando.")
+            return
+        Exam.__table__.drop()
+        Registered.__table__.drop()
+        initialize_sql(engin)
+        await ctx.send("Feito. Verifique o log para confirmação.")
+
     @commands.command('backup')
-    async def move_to_dsv_db(ctx):
+    async def move_to_dev_db(ctx):
         """Copia estudantes e matérias no BD de produção (Heroku Postgres) para o SQLite de desenvolvimento."""
         if str(ctx.author.id) != getenv("DAEDALUS_OWNERID"):
             await ctx.send("Somente o proprietário pode rodar esse comando.")
-        elif daedalus_environment != "DSV":
+        elif daedalus_environment != "DEV":
             return
         else:
             try:
-                dsvsession = dsvsmkr()
+                devsession = devsmkr()
                 session = smkr()
                 print("---------- Sessions initialized ----------")
             except Exception:
@@ -174,19 +189,19 @@ class Misc(commands.Cog):
                 print("---------- Subjects and students fetched ----------")
             except Exception as e:
                 print(f"Exception caught while fetching current data from PRD DB: {e}")
-                dsvsession.close()
+                devsession.close()
                 session.close()
                 return
 
             try:
-                dsv_students = [Student(
+                dev_students = [Student(
                     id=int(student.id),
                     name=str(student.name),
                     registry=int(student.registry),
                     discord_id=int(student.discord_id)
                 ) for student in prd_students]
 
-                dsv_subjects = [Subject(
+                dev_subjects = [Subject(
                     id=int(subject.id),
                     code=str(subject.code),
                     fullname=str(subject.fullname),
@@ -195,30 +210,30 @@ class Misc(commands.Cog):
                 print("---------- Subjects and students copied ----------")
             except Exception as e:
                 print("Exception caught while sanitizing data")
-                dsvsession.close()
+                devsession.close()
                 session.close()
                 return
 
             try:
                 session.expunge_all()
-                dsvsession.add_all(dsv_students)
-                dsvsession.add_all(dsv_subjects)
-                print("---------- Data added to DSV session ----------")
+                devsession.add_all(dev_students)
+                devsession.add_all(dev_subjects)
+                print("---------- Data added to DEV session ----------")
             except Exception:
-                print("Exception caught while adding current data to DSV session")
-                dsvsession.close()
+                print("Exception caught while adding current data to DEV session")
+                devsession.close()
                 session.close()
                 return
 
             try:
-                dsvsession.commit()
+                devsession.commit()
                 session.rollback()
                 print("---------- Changes committed ----------")
                 await ctx.send("Feito. Verifique o log para confirmação.")
             except Exception:
-                print("Exception caught while committing changes to DSV DB")
+                print("Exception caught while committing changes to DEV DB")
             finally:
-                dsvsession.close()
+                devsession.close()
                 session.close()
 
     @commands.command('restore')
@@ -226,11 +241,11 @@ class Misc(commands.Cog):
         """Copia estudantes e matérias no SQLite de desenvolvimento para o BD de produção (Heroku Postgres)."""
         if str(ctx.author.id) != getenv("DAEDALUS_OWNERID"):
             await ctx.send("Somente o proprietário pode rodar esse comando.")
-        elif daedalus_environment != "DSV":
+        elif daedalus_environment != "DEV":
             return
         else:
             try:
-                dsvsession = dsvsmkr()
+                devsession = devsmkr()
                 session = smkr()
                 print("---------- Sessions initialized ----------")
             except Exception:
@@ -238,12 +253,12 @@ class Misc(commands.Cog):
                 return
 
             try:
-                dsv_students = dsvsession.query(Student).all()
-                dsv_subjects = dsvsession.query(Subject).all()
+                dev_students = devsession.query(Student).all()
+                dev_subjects = devsession.query(Subject).all()
                 print("---------- Subjects and students fetched ----------")
             except Exception:
-                print("Exception caught while fetching current data from DSV DB")
-                dsvsession.close()
+                print("Exception caught while fetching current data from DEV DB")
+                devsession.close()
                 session.close()
                 return
 
@@ -253,39 +268,39 @@ class Misc(commands.Cog):
                     name=str(student.name),
                     registry=int(student.registry),
                     discord_id=int(student.discord_id)
-                ) for student in dsv_students]
+                ) for student in dev_students]
 
                 prd_subjects = [Subject(
                     id=int(subject.id),
                     code=str(subject.code),
                     fullname=str(subject.fullname),
                     semester=int(subject.semester)
-                ) for subject in dsv_subjects]
+                ) for subject in dev_subjects]
                 print("---------- Subjects and students copied ----------")
             except Exception as e:
                 print("Exception caught while sanitizing data")
-                dsvsession.close()
+                devsession.close()
                 session.close()
                 return
 
             try:
-                dsvsession.expunge_all()
+                devsession.expunge_all()
                 session.add_all(prd_students)
                 session.add_all(prd_subjects)
                 print("---------- Data added to PRD session ----------")
             except Exception:
                 print("Exception caught while adding current data to PRD session")
-                dsvsession.close()
+                devsession.close()
                 session.close()
                 return
 
             try:
                 session.commit()
-                dsvsession.rollback()
+                devsession.rollback()
                 print("---------- Changes committed ----------")
                 await ctx.send("Feito. Verifique o log para confirmação.")
             except Exception:
                 print("Exception caught while committing changes to PRD DB")
             finally:
-                dsvsession.close()
+                devsession.close()
                 session.close()

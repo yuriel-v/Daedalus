@@ -10,7 +10,7 @@ from os.path import isfile, join
 from random import randint
 
 
-class Roger(commands.Cog):
+class Roger(commands.Cog, name='Roger'):
     def __init__(self, bot):
         self.bot = bot
         self.roger_respostas = {

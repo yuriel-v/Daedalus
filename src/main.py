@@ -16,11 +16,8 @@ Contanto que me dê o crédito, claro.
 from os import getenv
 from discord.ext import commands
 from sqlalchemy.orm import close_all_sessions
-from dao import engin, dsvengin
+from dao import engin, devengin
 from model import initialize_sql
-# from dao.studentdao import StudentDao
-# from dao.subjectdao import SubjectDao
-# from dao.schedulerdao import SchedulerDao
 
 # Imports de módulos customizados
 from controller.misc import Misc, split_args, arg_types, smoothen
@@ -30,21 +27,14 @@ from controller.student import StudentController
 from controller.scheduler import ScheduleController
 from controller.subject import SubjectController
 
-# Manutenção de BD
-from model.student import Student
-from model.subject import Subject
-from model.exam import Exam
-from model.registered import Registered
-
 # Inicialização
 daedalus_token = getenv("DAEDALUS_TOKEN")
-bot = commands.Bot(command_prefix=['>>', 'Roger '])
-daedalus_version = '0.6.2'
+bot = commands.Bot(command_prefix=['>>', 'Roger '], owner_id=int(getenv('DAEDALUS_OWNERID')))
+daedalus_version = '0.6.3'
 daedalus_environment = getenv("DAEDALUS_ENV").upper()
 initialize_sql(engin)
-if daedalus_environment == "DSV":
-    initialize_sql(dsvengin)
-
+if daedalus_environment == "DEV":
+    initialize_sql(devengin)
 
 # Cogs
 bot.add_cog(Misc(bot))
@@ -54,10 +44,26 @@ bot.add_cog(StudentController(bot))
 bot.add_cog(SubjectController(bot))
 bot.add_cog(ScheduleController(bot))
 
+# Mensagem de inicialização
+nl = '\n'
+init = f"""
+=========================================================================
+Project Daedalus v{daedalus_version} - {daedalus_environment} environment
+All systems go.
+Loaded cogs:
+{nl.join([f'- {x}' for x in bot.cogs.keys()])}
+=========================================================================
+"""
+
+
+@bot.listen('on_ready')
+async def ready():
+    print(init)
+
 
 @bot.command('version')
 async def show_version(ctx):
-    await ctx.send(f"Project Daedalus v{daedalus_version} ({daedalus_environment})")
+    await ctx.send("```" + smoothen(init.split('\n')[2:-2:1]) + "```")
 
 
 @bot.command()
@@ -85,17 +91,6 @@ async def tolog(ctx):
 @bot.command('fmt')
 async def fmt(ctx):
     await ctx.send(f"```{smoothen(split_args(ctx.message.content, islist=False))}```")
-
-
-@bot.command('drop')
-async def drop_tables(ctx):
-    if str(ctx.author.id) != getenv("DAEDALUS_OWNERID"):
-        await ctx.send("Somente o proprietário pode rodar esse comando.")
-        return
-    Exam.__table__.drop()
-    Registered.__table__.drop()
-    initialize_sql(engin)
-    await ctx.send("Feito. Verifique o log para confirmação.")
 
 # Aqui é só a parte de rodar e terminar o bot.
 bot.run(daedalus_token)

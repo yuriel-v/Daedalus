@@ -7,7 +7,7 @@ from controller.misc import split_args, dprint
 from asyncio.tasks import sleep
 
 
-class Games(commands.Cog):
+class Games(commands.Cog, name='Games'):
     def __init__(self, bot):
         self.bot = bot
         self.eightball_replies = {
