@@ -139,8 +139,12 @@ class Games(commands.Cog, name='Games'):
 
     def cog_info(self, command=None) -> str:
         if command is not None and str(command).lower() in self.cmds.keys():
-            reply = self.cmds[str(command)].__doc__
+            if isinstance(self.cmds[str(command)], commands.Command):
+                reply = self.cmds[str(command)].help
+            else:
+                reply = self.cmds[str(command)].__doc__
         else:
+            print('Proc outer else')
             nl = '\n'
             reply = f"""
             Games
