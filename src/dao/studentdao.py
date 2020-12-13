@@ -122,7 +122,7 @@ class StudentDao:
             print(f"Caught during rollback: {e}")
         return tuple([std.discord_id for std in self.session.query(Student).all()])
 
-    def update(self, discord_id: int, name=None, registry=None) -> int:
+    def update(self, student: Union[int, Student], name=None, registry=None) -> int:
         """
         Atualiza o cadastro de um estudante identificado por ID Discord e retorna um inteiro indicando o que aconteceu:
         - `0`: Operação bem-sucedida;
@@ -135,7 +135,12 @@ class StudentDao:
         except Exception as e:
             print(f"Caught during rollback: {e}")
         try:
-            cur_student = self.find_by_discord_id(discord_id)
+            if isinstance(student, int):
+                cur_student = self.find_by_discord_id(student)
+            elif isinstance(student, Student):
+                cur_student = student
+            else:
+                raise TypeError("Student is neither an integer Discord ID nor an instance of Student")
 
             if cur_student is None:
                 return 2

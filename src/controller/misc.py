@@ -1,20 +1,43 @@
 # Módulo de sei lá o quê. Utilidades em geral. E memes.
-from os import getenv
-from typing import Iterable, Union
+from time import sleep
+from discord import Message
 from discord.ext import commands
-from sys import getsizeof
-
 from discord.ext.commands.core import is_owner
+from math import trunc
+from os import getenv
+from sys import getsizeof
+from typing import Iterable, Union
+
+from dao import smkr, devsmkr, engin
 from model import initialize_sql
 from model.exam import Exam
 from model.registered import Registered
-
 from model.student import Student
 from model.subject import Subject
-from dao import smkr, devsmkr, engin
+
 
 daedalus_environment = getenv("DAEDALUS_ENV").upper()
 debug = bool(daedalus_environment == "DEV")
+
+
+async def spinner(condition: bool, msg: Message, seconds: int = None):
+    def mapping(i: int) -> int:
+        return i - (4 * trunc(i / 4))
+
+    chars = ('\\', '|', '/', '—')
+    if seconds is not None:
+        for i in range(abs(seconds * 4)):
+            if not condition:
+                return
+            else:
+                await msg.edit(content=str(msg.content[:-1:] + chars[mapping(i)]))
+                sleep(0.25)
+    else:
+        i = 0
+        while condition is True:
+            await msg.edit(content=str(msg.content[:-1:] + chars[mapping(i)]))
+            i += 1
+            sleep(0.25)
 
 
 def nround(number: float, decimals=1):
@@ -64,8 +87,8 @@ def split_args(arguments: str, prefixed=False, islist=True) -> Union[list[str], 
         return ' '.join(arguments)
 
 
-def arg_types(arguments: Iterable, repr=False):
-    """Separa argumentos passados num iterável em strings, floats ou ints."""
+def arg_types(arguments: Union[list, tuple, set], repr=False):
+    """Separa argumentos passados em strings, floats ou ints."""
     arg_with_types = {0: [], 1: [], 2: []}
     for x in arguments:
         x = str(x)
@@ -124,6 +147,14 @@ def smoothen(message: Iterable):
 class Misc(commands.Cog, name='Misc'):
     def __init__(self, bot):
         self.bot = bot
+        self.cmds = {
+            'emphasize': self.emphasize,
+            'code': self.text_code,
+            'sizeof': self.sizeof_value,
+            'drop': self.drop_tables,
+            'backup': self.move_to_dev_db,
+            'restore': self.move_to_prd_db
+        }
 
     @commands.command()
     async def emphasize(self, ctx):
@@ -132,7 +163,7 @@ class Misc(commands.Cog, name='Misc'):
 
     @commands.command(name='code')
     async def text_code(self, ctx):
-        """Texto em código"""
+        """Texto em código."""
         reply = ''.join([
             "```\n",
             split_args(ctx.message.content, islist=False),
@@ -142,7 +173,7 @@ class Misc(commands.Cog, name='Misc'):
 
     @commands.command('sizeof')
     async def sizeof_value(self, ctx):
-        """Tamanho em bytes do valor digitado"""
+        """Tamanho em bytes do valor digitado."""
         args = split_args(ctx.message.content)
         if not args:
             await ctx.send("Sintaxe: `>>sizeof numero`")
@@ -159,7 +190,12 @@ class Misc(commands.Cog, name='Misc'):
 
     @commands.command('drop')
     async def drop_tables(ctx):
-        if not is_owner(ctx.author):
+        """
+        Faz um `DROP TABLE` em 'exams' e 'registered', apagando todas as provas e matrículas.
+        As tabelas são reconstruídas após isso.
+        - Somente o proprietário pode usar esse comando!
+        """
+        if not is_owner():
             await ctx.send("Somente o proprietário pode rodar esse comando.")
             return
         Exam.__table__.drop()
@@ -169,7 +205,10 @@ class Misc(commands.Cog, name='Misc'):
 
     @commands.command('backup')
     async def move_to_dev_db(ctx):
-        """Copia estudantes e matérias no BD de produção (Heroku Postgres) para o SQLite de desenvolvimento."""
+        """
+        Copia estudantes e matérias no BD de produção (Heroku Postgres) para o SQLite de desenvolvimento.
+        - Somente o proprietário pode usar esse comando!
+        """
         if str(ctx.author.id) != getenv("DAEDALUS_OWNERID"):
             await ctx.send("Somente o proprietário pode rodar esse comando.")
         elif daedalus_environment != "DEV":
@@ -238,7 +277,10 @@ class Misc(commands.Cog, name='Misc'):
 
     @commands.command('restore')
     async def move_to_prd_db(ctx):
-        """Copia estudantes e matérias no SQLite de desenvolvimento para o BD de produção (Heroku Postgres)."""
+        """
+        Copia estudantes e matérias no SQLite de desenvolvimento para o BD de produção (Heroku Postgres).
+        - Somente o proprietário pode usar esse comando!
+        """
         if str(ctx.author.id) != getenv("DAEDALUS_OWNERID"):
             await ctx.send("Somente o proprietário pode rodar esse comando.")
         elif daedalus_environment != "DEV":
@@ -304,3 +346,17 @@ class Misc(commands.Cog, name='Misc'):
             finally:
                 devsession.close()
                 session.close()
+
+    def cog_info(self, command=None) -> str:
+        if command is not None and str(command).lower() in self.cmds.keys():
+            reply = f'-- {str(command).lower()} --\n' + self.cmds[str(command)].__doc__
+        else:
+            nl = '\n'
+            reply = f"""
+            Misc
+            Esse módulo contém funções utilitárias ou de manutenção.\n
+            Comandos incluem:
+            {nl.join([f'- {x}' for x in self.cmds.keys()])}
+            """
+
+        return '\n'.join([x.strip() for x in reply.split('\n')]).strip()

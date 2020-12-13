@@ -1,5 +1,6 @@
 # Controlador para registro de matrículas em matérias e suas atividades.
 from controller.misc import split_args, smoothen
+from discord import Message
 from discord.ext import commands
 from dao.schedulerdao import SchedulerDao
 from dao.studentdao import StudentDao
@@ -8,7 +9,7 @@ from model.student import Student
 from model.subject import Subject
 
 
-class ScheduleController(commands.Cog, name='Schedule Controller'):
+class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
     def __init__(self, bot):
         self.bot = bot
         self.stdao = StudentDao()
@@ -18,7 +19,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller'):
         self.stdao.sclear()
 
         self.cmds = {
-            'matricular': self.sign_up,
+            'matricular': self.enroll,
             'trancar': self.lock_enrollment,
             'nota': self.update_grade,
             'status': self.update_status,
@@ -52,7 +53,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller'):
                 else:
                     await ctx.send("Comando inválido. Sintaxe: `>>sc comando argumentos`")
 
-    async def sign_up(self, ctx: commands.Context, student: Student):
+    async def enroll(self, ctx: commands.Context, student: Student):
         """
         Matricula um estudante numa matéria.
         - Se essa matéria for uma matéria trancada, ela é reativada.
@@ -62,24 +63,29 @@ class ScheduleController(commands.Cog, name='Schedule Controller'):
         if not arguments:
             await ctx.send("Sintaxe inválida. Exemplo: `>>sc matricular mt1 mt2 ...`")
         else:
-            arguments = list(filter(lambda x: len(x) == 3, arguments))
-            if len(arguments) > 8:
-                arguments = arguments[0:7:1]  # up to 8 at once only, uni rules
-            subjects = self.sbdao.find_by_code(arguments)
-            subjects = {x.code: x for x in subjects if x is not None}
-            subj_names = tuple([f"-> {x}: {y.fullname}" for x, y in subjects.items()])
+            msg: Message = await ctx.send('Efetuando matrícula...')
+            try:
+                arguments = list(filter(lambda x: len(x) == 3, arguments))
+                if len(arguments) > 8:
+                    arguments = arguments[0:7:1]  # up to 8 at once only, uni rules
+                subjects = self.sbdao.find_by_code(arguments)
+                subjects = {x.code: x for x in subjects if x is not None}
+                subj_names = tuple([f"-> {x}: {y.fullname}" for x, y in subjects.items()])
 
-            if not subjects:
-                await ctx.send("Matéria(s) inexistente(s).\nUse o comando `>>mt todas` ou `>>mt buscar` para verificar o código da(s) matéria(s) desejada(s).")
-            else:
-                self.stdao.expunge(student)
-                for subj in subjects.values():
-                    self.sbdao.expunge(subj)
-                res = self.scdao.register(student=student, subjects=subjects)
-                if res == 0:
-                    await ctx.send(f"Matrícula registrada nas matérias a seguir:\n```{smoothen(subj_names)}```")
+                if not subjects:
+                    await msg.edit(content="Matéria(s) inexistente(s).\nUse o comando `>>mt todas` ou `>>mt buscar` para verificar o código da(s) matéria(s) desejada(s).")
                 else:
-                    await ctx.send("Algo deu errado. Consulte o log para mais detalhes.")
+                    self.stdao.expunge(student)
+                    for subj in subjects.values():
+                        self.sbdao.expunge(subj)
+                    res = self.scdao.register(student=student, subjects=subjects)
+                    if res == 0:
+                        await msg.edit(content=f"Matrícula registrada nas matérias a seguir:\n```{smoothen(subj_names)}```")
+                    else:
+                        msg.edit(content="Algo deu errado. Consulte o log para mais detalhes.")
+            except Exception as e:
+                print(f'Exception caught at enrolling student: {e}\n Stack trace: {e.__traceback__}')
+                await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
     async def update_grade(self, ctx: commands.Context, student: Student):
         """
@@ -99,6 +105,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller'):
         else:
             exam_types = ('AV1', 'APS1', 'AV2', 'APS2', 'AV3')
             max_grades = (7.0, 3.0, 8.0, 2.0, 10.0)
+            msg: Message = await ctx.send('Atualizando nota...')
             try:
                 arguments[0] = arguments[0].upper()
                 arguments[1] = exam_types.index(arguments[1].upper()) + 1
@@ -118,24 +125,28 @@ class ScheduleController(commands.Cog, name='Schedule Controller'):
                     raise SyntaxError("Subject code length is not 3")
             except Exception as e:
                 if 'Grade' in str(e) and isinstance(e, SyntaxError):
-                    await ctx.send(f"{grade_too_high} `{arguments[2]} > {max_grades[arguments[1] - 1]}`")
+                    await msg.edit(content=f"{grade_too_high} `{arguments[2]} > {max_grades[arguments[1] - 1]}`")
                 else:
-                    await ctx.send(invalid_syntax)
+                    await msg.edit(content=invalid_syntax)
                 return
 
-            sbj: Subject = self.sbdao.find_one_by_code(arguments[0])
-            res = self.scdao.update(student=student, subject=sbj.id, exam_type=arguments[1], newval=arguments[2], current=arguments[3], grade=True)
-            responses = (
-                f"Nota alterada: ```{smoothen(f'{sbj.fullname} | {exam_types[arguments[1] - 1]}: {round(arguments[2], 1)}')}```",
-                "Algo deu errado. Consulte o log para mais detalhes.",
-                invalid_syntax,
-                "O trabalho para a matéria especificada não foi encontrado.",
-                "Você não pode alterar a nota para um trabalho que não foi entregue ainda."
-            )
-            if res not in range(len(responses)):
-                await ctx.send(responses[1])
-            else:
-                await ctx.send(responses[res])
+            try:
+                sbj: Subject = self.sbdao.find_one_by_code(arguments[0])
+                res = self.scdao.update(student=student, subject=sbj.id, exam_type=arguments[1], newval=arguments[2], current=arguments[3], grade=True)
+                responses = (
+                    f"Nota alterada: ```{smoothen(f'{sbj.fullname} | {exam_types[arguments[1] - 1]}: {round(arguments[2], 1)}')}```",
+                    "Algo deu errado. Consulte o log para mais detalhes.",
+                    invalid_syntax,
+                    "O trabalho para a matéria especificada não foi encontrado.",
+                    "Você não pode alterar a nota para um trabalho que não foi entregue ainda."
+                )
+                if res not in range(len(responses)):
+                    await msg.edit(content=responses[1])
+                else:
+                    await msg.edit(content=responses[res])
+            except Exception as e:
+                print(f'Exception caught at updating grade: {e}\n Stack trace: {e.__traceback__}')
+                await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
     async def update_status(self, ctx: commands.Context, student: Student):
         """
@@ -151,6 +162,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller'):
         if len(arguments) < 3:
             await ctx.send(invalid_syntax)
         else:
+            msg: Message = await ctx.send('Atualizando status...')
             try:
                 statuses = ('OK', 'EPN', 'PND')
                 exam_types = ('AV1', 'APS1', 'AV2', 'APS2', 'AV3')
@@ -165,22 +177,26 @@ class ScheduleController(commands.Cog, name='Schedule Controller'):
                     else:
                         arguments[2] = statuses.index(arguments[2].upper()) + 1
             except Exception:
-                await ctx.send(invalid_syntax)
+                await msg.edit(content=invalid_syntax)
                 return
 
-            sbj: Subject = self.sbdao.find_one_by_code(arguments[0])
-            print(f'newval = {arguments[2]}')
-            res = self.scdao.update(student=student, subject=sbj.id, exam_type=arguments[1], newval=arguments[2], grade=False)
-            responses = (
-                f"Status alterado: ```{smoothen(f'{sbj.fullname} | {exam_types[arguments[1] - 1]}: {statuses[arguments[2] - 1]}')}```",
-                "Algo deu errado. Consulte o log para mais detalhes.",
-                invalid_syntax,
-                "O trabalho para a matéria especificada não foi encontrado."
-            )
-            if res not in range(len(responses)):
-                await ctx.send(responses[1])
-            else:
-                await ctx.send(responses[res])
+            try:
+                sbj: Subject = self.sbdao.find_one_by_code(arguments[0])
+                print(f'newval = {arguments[2]}')
+                res = self.scdao.update(student=student, subject=sbj.id, exam_type=arguments[1], newval=arguments[2], grade=False)
+                responses = (
+                    f"Status alterado: ```{smoothen(f'{sbj.fullname} | {exam_types[arguments[1] - 1]}: {statuses[arguments[2] - 1]}')}```",
+                    "Algo deu errado. Consulte o log para mais detalhes.",
+                    invalid_syntax,
+                    "O trabalho para a matéria especificada não foi encontrado."
+                )
+                if res not in range(len(responses)):
+                    await msg.edit(content=responses[1])
+                else:
+                    await msg.edit(content=responses[res])
+            except Exception as e:
+                print(f'Exception caught at updating status: {e}\n Stack trace: {e.__traceback__}')
+                await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
     async def lock_enrollment(self, ctx: commands.Context, student: Student):
         """
@@ -195,42 +211,42 @@ class ScheduleController(commands.Cog, name='Schedule Controller'):
         if not arguments:
             await ctx.send(invalid_syntax)
         else:
+            msg: Message = await ctx.send('Trancando matrículas...')
             try:
                 subjects = None
                 if arguments[0] == 'todas':
+                    lock_all = True
                     ret = self.scdao.lock(student, [], True)
                 else:
+                    lock_all = False
                     subjects = {x.code: x.fullname for x in self.sbdao.find_by_code(arguments)}
                     print(f"Subjects: {subjects}")
                     ret = self.scdao.lock(student, subjects.keys())
 
-                if ret == 0:
-                    if subjects is None:
-                        ret = "Você trancou todas as suas matrículas."
-                    else:
-                        ret = f"Matrículas trancadas com sucesso: ```{smoothen([f'-> {x}' for x in subjects.values()])}```"
-                elif ret == 2:
-                    ret = invalid_syntax
+                statuses = (
+                    "Você trancou todas as suas matrículas.",
+                    "Algo deu errado. Consulte o log para mais detalhes.",
+                    invalid_syntax
+                )
+                if not lock_all and ret == 0:
+                    await msg.edit(content=f"Matrículas trancadas com sucesso: ```{smoothen([f'-> {x}' for x in subjects.values()])}```")
                 else:
-                    ret = "Algo deu errado. Consulte o log para mais detalhes."
-
-                await ctx.send(ret)
+                    await msg.edit(content=statuses[ret])
             except Exception as e:
-                print(f'Exception caught during enrollment locking: {e}')
+                print(f'Exception caught during enrollment locking: {e}\n Stack trace: {e.__traceback__}')
+                await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
-    def cog_info(self, command=None):
+    def cog_info(self, command=None) -> str:
         if command is not None and str(command).lower() in self.cmds.keys():
-            reply = self.cmds[str(command)].__doc__
+            reply = f'-- sc {str(command).lower()} --\n' + self.cmds[str(command)].__doc__
         else:
-            reply = """
+            nl = '\n'
+            reply = f"""
             sc: Schedule Controller
             Este módulo foi criado para auxiliar na matrícula e controle de status/notas de provas matriculadas.
             Somente usuários matriculados pelo módulo 'st' podem utilizar as funções desse módulo!\n
             Comandos incluem:
-            - sc matricular;
-            - sc trancar;
-            - sc nota;
-            - sc status/sts.
+            {nl.join([f'- {x}' for x in self.cmds.keys()])}
             """
 
         return '\n'.join([x.strip() for x in reply.split('\n')]).strip()

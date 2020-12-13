@@ -1,7 +1,5 @@
-from dao.studentdao import StudentDao
-from dao.subjectdao import SubjectDao
-# from dao.schedulerdao import SchedulerDao
+from os import getenv
 
-stdao = StudentDao()
-sbdao = SubjectDao()
-# scdao = SchedulerDao()
+daedalus_token = getenv("DAEDALUS_TOKEN")
+daedalus_version = '0.7.0'
+daedalus_environment = getenv("DAEDALUS_ENV").upper()

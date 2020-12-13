@@ -9,22 +9,30 @@ from os import listdir
 from os.path import isfile, join
 from random import randint
 
+from controller.misc import split_args
+
 
 class Roger(commands.Cog, name='Roger'):
     def __init__(self, bot):
         self.bot = bot
         self.roger_respostas = {
             1: "SE LASCAR",
-            2: "sim, é justo",
-            3: "escreva novamente, serumaninho",
-            4: "Justo",
-            5: "Pega no meu canudo",
-            6: "NA tu",
-            7: "NA você, NA eu, NA todo mundo",
-            8: "Cacilda"
+            2: "Pega no meu canudo",
+            3: "Ah vai tomar banho",
+            4: "NA tu",
+            5: "NA você, NA eu, NA todo mundo",
+            6: "escreva novamente, serumaninho",
+            7: "Cacilda",
+            8: "Justo",
+            9: "sim, é justo",
+            10: "É, talvez"
+        }
+        self.cmds = {
+            '?': self.roger,
+            'responde': self.roger_responde
         }
 
-    async def cog_command_error(self, ctx, error):
+    async def cog_command_error(self, ctx: commands.Context, error):
         if isinstance(error, commands.CommandOnCooldown):
             await ctx.send("Calma, rapaz. Sem pressa, tem um pouco de Roger pra todo mundo.")
         else:
@@ -32,18 +40,17 @@ class Roger(commands.Cog, name='Roger'):
 
     @commands.command('?')
     @commands.cooldown(rate=1, per=10, type=BucketType.user)
-    async def roger(self, ctx):
+    async def roger(self, ctx: commands.Context):
         """Você perguntou? O Roger aparece!"""
         if ctx.prefix != 'Roger ':
             return
 
         roger_pics = [f for f in listdir('./src/roger') if isfile(join('./src/roger', f))]
         fn = str(roger_pics[randint(0, len(roger_pics) - 1)])
-        pic = File(f'./src/roger/{fn}', fn)
         embed = Embed(description=fn, colour=Colour(randint(0x000000, 0xFFFFFF)))
         embed.set_image(url=f"attachment://{fn}")
 
-        await ctx.send(file=pic, embed=embed)
+        await ctx.send(embed=embed)
         if fn == 'julio_cobra.png':
             original_roles = [x for x in ctx.author.roles if x.name != '@everyone']
 
@@ -72,7 +79,7 @@ class Roger(commands.Cog, name='Roger'):
                     await ctx.send(escaped)
 
     @commands.command('responde:')
-    async def roger_responde(self, ctx):
+    async def roger_responde(self, ctx: commands.Context):
         """
         Roger responde: Eu sou bom programador?
 
@@ -81,4 +88,23 @@ class Roger(commands.Cog, name='Roger'):
         if ctx.prefix != 'Roger ':
             return
 
-        await ctx.send(f"<@450731404532383765> diz: {self.roger_respostas[randint(1, len(self.roger_respostas.keys()))]}")
+        if split_args(ctx.message.content):
+            await ctx.send(f"<@450731404532383765> diz: {self.roger_respostas[randint(1, len(self.roger_respostas.keys()))]}")
+        else:
+            await ctx.send(f"<@450731404532383765> diz: Se lascar, pergunta alguma coisa!")
+
+    def cog_info(self, command=None) -> str:
+        if command is not None and str(command).lower() in self.cmds.keys():
+            reply = f'-- {str(command).lower()} --\n' + self.cmds[str(command)].__doc__
+        else:
+            nl = '\n'
+            reply = f"""
+            Roger hotline: Fale com o Roger!
+            A nossa emulação do Roger, auxiliada pela própria lenda em charme e osso, responde às suas perguntas
+            com `Roger responde:` e, caso tenha saudades do mito, só pergunte pelo Roger com `Roger ?` (com espaço!)
+            que ele aparece em uma de dezenas de fotos lendárias!
+            Mas tenha cuidado com o Julio e a sua cobra de estimação.\n
+            Comandos incluem:
+            {nl.join([f'- {x}' for x in self.cmds.keys()])}
+            """
+        return '\n'.join([x.strip() for x in reply.split('\n')]).strip()

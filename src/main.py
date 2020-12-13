@@ -17,21 +17,20 @@ from os import getenv
 from discord.ext import commands
 from sqlalchemy.orm import close_all_sessions
 from dao import engin, devengin
+from controller import daedalus_version, daedalus_environment, daedalus_token
 from model import initialize_sql
 
 # Imports de módulos customizados
 from controller.misc import Misc, split_args, arg_types, smoothen
 from controller.games import Games
 from controller.roger import Roger
+from controller.help import DaedalusHelp
 from controller.student import StudentController
 from controller.scheduler import ScheduleController
 from controller.subject import SubjectController
 
 # Inicialização
-daedalus_token = getenv("DAEDALUS_TOKEN")
 bot = commands.Bot(command_prefix=['>>', 'Roger '], owner_id=int(getenv('DAEDALUS_OWNERID')))
-daedalus_version = '0.6.3'
-daedalus_environment = getenv("DAEDALUS_ENV").upper()
 initialize_sql(engin)
 if daedalus_environment == "DEV":
     initialize_sql(devengin)
@@ -40,6 +39,7 @@ if daedalus_environment == "DEV":
 bot.add_cog(Misc(bot))
 bot.add_cog(Games(bot))
 bot.add_cog(Roger(bot))
+bot.add_cog(DaedalusHelp(bot))
 bot.add_cog(StudentController(bot))
 bot.add_cog(SubjectController(bot))
 bot.add_cog(ScheduleController(bot))

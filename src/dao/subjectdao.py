@@ -78,7 +78,7 @@ class SubjectDao:
                 else:
                     q = q.order_by(Subject.semester).all()
             except Exception as e:
-                q = []
+                q = None
                 self.session.rollback()
                 print(f"Exception caught on SubjectDao: {e}")
             return q
