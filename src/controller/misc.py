@@ -1,9 +1,6 @@
 # Módulo de sei lá o quê. Utilidades em geral. E memes.
-from time import sleep
-from discord import Message
 from discord.ext import commands
 from discord.ext.commands.core import is_owner
-from math import trunc
 from os import getenv
 from sys import getsizeof
 from typing import Iterable, Union
@@ -15,29 +12,8 @@ from model.registered import Registered
 from model.student import Student
 from model.subject import Subject
 
-
 daedalus_environment = getenv("DAEDALUS_ENV").upper()
 debug = bool(daedalus_environment == "DEV")
-
-
-async def spinner(condition: bool, msg: Message, seconds: int = None):
-    def mapping(i: int) -> int:
-        return i - (4 * trunc(i / 4))
-
-    chars = ('\\', '|', '/', '—')
-    if seconds is not None:
-        for i in range(abs(seconds * 4)):
-            if not condition:
-                return
-            else:
-                await msg.edit(content=str(msg.content[:-1:] + chars[mapping(i)]))
-                sleep(0.25)
-    else:
-        i = 0
-        while condition is True:
-            await msg.edit(content=str(msg.content[:-1:] + chars[mapping(i)]))
-            i += 1
-            sleep(0.25)
 
 
 def nround(number: float, decimals=1):

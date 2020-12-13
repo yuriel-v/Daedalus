@@ -1,9 +1,7 @@
 # Módulo de controle de estudantes.
-import time
-from typing import final
-
+from time import time
 from discord.message import Message
-from controller.misc import spinner, split_args, dprint, smoothen, uni_avg, avg, nround
+from controller.misc import split_args, dprint, smoothen, uni_avg, avg, nround
 from dao.schedulerdao import SchedulerDao
 from dao.studentdao import StudentDao
 from discord.ext import commands
@@ -145,7 +143,7 @@ class StudentController(commands.Cog, name='Student Controller: st'):
         if cur_student is None:
             await msg.edit(content="Você não está cadastrado.")
         else:
-            start = time.time()
+            start = time()
             command = next(iter(split_args(ctx.message.content, prefixed=True)), None)
             if command is not None:
                 command = command.lower()
@@ -198,7 +196,7 @@ class StudentController(commands.Cog, name='Student Controller: st'):
             else:
                 final_msg = f"Seus dados: ```{smoothen(final_msg)}```"
             finally:
-                end = round(time.time() - start, 2)
+                end = round(time() - start, 2)
                 await msg.edit(content=final_msg + f"Tempo de execução: {end} seg.")
                 dprint(f"------------------ Time taken: {end} sec ------------------")
 

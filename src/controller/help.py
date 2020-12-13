@@ -1,6 +1,6 @@
 # Módulo de ajuda aos comandos do bot.
 from discord.ext import commands
-from controller.misc import smoothen, split_args
+from controller.misc import split_args
 from controller import daedalus_environment, daedalus_version
 
 

@@ -2,7 +2,6 @@
 from asyncio.tasks import sleep
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
-from discord.file import File
 from discord.embeds import Embed
 from discord.colour import Colour
 from os import listdir
