@@ -13,7 +13,7 @@ O propósito desse bot é servir de memes e sei lá o que, mas mais importante �
 servir como uma espécie de agenda e/ou catálogo de matérias e provas para
 estudantes de Ciência da Computação do Centro Universitário Carioca (UniCarioca).
 
-Para ajuda em um comando específico, digite `>>dhelp comando`.
+Para ajuda em um comando ou cog específico, digite `>>dhelp comando|cog`.
 Esse bot também conta com o módulo de ajuda padrão do discord.py!
   -> Para utilizá-lo, digite `>>help comando` ou `>>help categoria`.
 """
@@ -25,6 +25,7 @@ class DaedalusHelp(commands.Cog, name='Daedalus Help'):
 
     @commands.command('dhelp')
     async def cmd_parser(self, ctx: commands.Context):
+        """Comando de ajuda específico para o bot Daedalus."""
         arguments = split_args(ctx.message.content)
         nl = '\n'
         global default_message
