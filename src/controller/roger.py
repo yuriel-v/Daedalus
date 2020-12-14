@@ -3,6 +3,7 @@ from asyncio.tasks import sleep
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 from discord.embeds import Embed
+from discord.file import File
 from discord.colour import Colour
 from os import listdir
 from os.path import isfile, join
@@ -46,10 +47,11 @@ class Roger(commands.Cog, name='Roger'):
 
         roger_pics = [f for f in listdir('./src/roger') if isfile(join('./src/roger', f))]
         fn = str(roger_pics[randint(0, len(roger_pics) - 1)])
+        pic = File(f'./src/roger/{fn}', fn)
         embed = Embed(description=fn, colour=Colour(randint(0x000000, 0xFFFFFF)))
         embed.set_image(url=f"attachment://{fn}")
 
-        await ctx.send(embed=embed)
+        await ctx.send(file=pic, embed=embed)
         if fn == 'julio_cobra.png':
             original_roles = [x for x in ctx.author.roles if x.name != '@everyone']
 
