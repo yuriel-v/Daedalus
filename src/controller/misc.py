@@ -1,6 +1,7 @@
 # Módulo de sei lá o quê. Utilidades em geral. E memes.
 from discord.ext import commands
 from discord.ext.commands.core import is_owner
+from discord import Member
 from os import getenv
 from sys import getsizeof
 from typing import Iterable, Union
@@ -131,6 +132,11 @@ class Misc(commands.Cog, name='Misc'):
             'backup': self.move_to_dev_db,
             'restore': self.move_to_prd_db
         }
+
+    @commands.Cog.listener(name='on_member_join')
+    async def auto_blacksmith(self, member: Member):
+        """Automaticamente torna novos membros ferreiros."""
+        await member.add_roles(member.guild.get_role(583789334797352970))
 
     @commands.command()
     async def emphasize(self, ctx):

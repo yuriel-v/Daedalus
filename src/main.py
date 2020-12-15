@@ -15,6 +15,7 @@ Contanto que me dê o crédito, claro.
 # Essenciais
 from os import getenv
 from discord.ext import commands
+from discord.flags import Intents
 from sqlalchemy.orm import close_all_sessions
 from dao import engin, devengin
 from controller import daedalus_version, daedalus_environment, daedalus_token
@@ -30,7 +31,11 @@ from controller.scheduler import ScheduleController
 from controller.subject import SubjectController
 
 # Inicialização
-bot = commands.Bot(command_prefix=['>>', 'Roger '], owner_id=int(getenv('DAEDALUS_OWNERID')))
+bot = commands.Bot(
+    command_prefix=['>>', 'Roger '],
+    owner_id=int(getenv('DAEDALUS_OWNERID')),
+    intents=Intents(messages=True, guilds=True, members=True, presences=True)
+)
 initialize_sql(engin)
 if daedalus_environment == "DEV":
     initialize_sql(devengin)

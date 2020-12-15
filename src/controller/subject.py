@@ -36,7 +36,7 @@ class SubjectController(commands.Cog, name='Subject Controller: mt'):
         elif command in self.cmds.keys():
             await self.cmds[command](ctx)
         else:
-            await ctx.send("Comando inválido. Sintaxe: `>>sb comando argumentos`")
+            await ctx.send("Comando inválido. Sintaxe: `>>mt comando argumentos`")
 
     async def add_subject(self, ctx: commands.Context):
         """
