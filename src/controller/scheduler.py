@@ -1,5 +1,6 @@
 # Controlador para registro de matrículas em matérias e suas atividades.
 from controller.misc import split_args, smoothen
+from controller import ferozes
 from discord import Message
 from discord.ext import commands
 from dao.schedulerdao import SchedulerDao
@@ -26,12 +27,18 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
             'sts': self.update_status
         }
 
+    def ferozes():
+        async def predicate(ctx):
+            return ctx.guild.id == ferozes
+        return commands.check(predicate)
+
     async def cog_after_invoke(self, ctx):
         self.stdao.sclear()
         self.sbdao.sclear()
         self.scdao.sclear()
 
     @commands.command('sc')
+    @ferozes()
     async def select_command(self, ctx: commands.Context):
         """
         Comando mestre para o cog Schedule Controller.

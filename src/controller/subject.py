@@ -1,8 +1,9 @@
 # Módulo de controle de matérias.
 # Nota: Somente o proprietário do bot pode invocar alguns desses comandos!
+from controller import ferozes
+from controller.misc import smoothen, split_args
 from discord.ext.commands.core import is_owner
 from discord.message import Message
-from controller.misc import smoothen, split_args
 from discord.ext import commands
 from dao.subjectdao import SubjectDao
 
@@ -20,10 +21,16 @@ class SubjectController(commands.Cog, name='Subject Controller: mt'):
             'editar': self.edit_subject
         }
 
+    def ferozes():
+        async def predicate(ctx):
+            return ctx.guild.id == ferozes
+        return commands.check(predicate)
+
     async def cog_after_invoke(self, ctx):
         self.sbdao.sclear()
 
     @commands.command('mt')
+    @ferozes()
     async def select_command(self, ctx: commands.Context):
         """
         Comando mestre para o cog Subject Controller.
