@@ -18,7 +18,7 @@ from discord.ext import commands
 from discord.flags import Intents
 from sqlalchemy.orm import close_all_sessions
 from dao import engin, devengin
-from controller import daedalus_version, daedalus_environment, daedalus_token
+from controller import daedalus_version, daedalus_environment, daedalus_token, ferozes
 from model import initialize_sql
 
 # Imports de módulos customizados
@@ -50,25 +50,36 @@ bot.add_cog(SubjectController(bot))
 bot.add_cog(ScheduleController(bot))
 
 # Mensagem de inicialização
-nl = '\n'
 init = f"""
 =========================================================================
 Project Daedalus v{daedalus_version} - {daedalus_environment} environment
-All systems go.
+All systems go."""
+init2 = """
 Loaded cogs:
-{nl.join([f'- {x}' for x in bot.cogs.keys()])}
-=========================================================================
-"""
+%s
+========================================================================="""
 
 
 @bot.listen('on_ready')
 async def ready():
-    print(init)
+    print(init + init2 % (list_cogs()))
+
+
+def list_cogs(guild_id: int = None):
+    if guild_id is None:
+        coglist = (f'- {x}' for x in bot.cogs.keys())
+    else:
+        coglist = (
+            f'- {cogname}' for cogname, cog in bot.cogs.items()
+            if 'ferozes' not in dir(cog) or ('ferozes' in dir(cog) and guild_id == ferozes)
+        )
+    return '\n'.join(coglist)
 
 
 @bot.command('version')
-async def show_version(ctx):
-    await ctx.send("```" + smoothen(init.split('\n')[2:-2:1]) + "```")
+async def show_version(ctx: commands.Context):
+    string = str(init + init2 % (list_cogs(ctx.guild.id))).split('\n')[2:-1:]
+    await ctx.send("```" + smoothen(string) + "```")
 
 
 @bot.command()

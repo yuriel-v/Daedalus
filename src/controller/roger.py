@@ -1,5 +1,7 @@
 # Memes do Roger.
 from asyncio.tasks import sleep
+from controller import ferozes
+from controller.misc import split_args
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 from discord.embeds import Embed
@@ -8,8 +10,6 @@ from discord.colour import Colour
 from os import listdir
 from os.path import isfile, join
 from random import randint
-
-from controller.misc import split_args
 
 
 class Roger(commands.Cog, name='Roger'):
@@ -32,6 +32,11 @@ class Roger(commands.Cog, name='Roger'):
             'responde': self.roger_responde
         }
 
+    def ferozes():
+        async def predicate(ctx):
+            return ctx.guild.id == ferozes
+        return commands.check(predicate)
+
     async def cog_command_error(self, ctx: commands.Context, error):
         if isinstance(error, commands.CommandOnCooldown):
             await ctx.send("Calma, rapaz. Sem pressa, tem um pouco de Roger pra todo mundo.")
@@ -40,6 +45,7 @@ class Roger(commands.Cog, name='Roger'):
 
     @commands.command('?')
     @commands.cooldown(rate=1, per=10, type=BucketType.user)
+    @ferozes()
     async def roger(self, ctx: commands.Context):
         """Você perguntou? O Roger aparece!"""
         if ctx.prefix != 'Roger ':
@@ -80,6 +86,7 @@ class Roger(commands.Cog, name='Roger'):
                     await ctx.send(escaped)
 
     @commands.command('responde:')
+    @ferozes()
     async def roger_responde(self, ctx: commands.Context):
         """
         Roger responde: Eu sou bom programador?

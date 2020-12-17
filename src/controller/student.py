@@ -1,6 +1,7 @@
 # Módulo de controle de estudantes.
 from time import time
 from discord.message import Message
+from controller import ferozes
 from controller.misc import split_args, dprint, smoothen, uni_avg, avg, nround
 from dao.schedulerdao import SchedulerDao
 from dao.studentdao import StudentDao
@@ -23,11 +24,17 @@ class StudentController(commands.Cog, name='Student Controller: st'):
             'excluir': self.delete_student
         }
 
+    def ferozes():
+        async def predicate(ctx):
+            return ctx.guild.id == ferozes
+        return commands.check(predicate)
+
     async def cog_after_invoke(self, ctx):
         self.stdao.sclear()
         self.scdao.sclear()
 
     @commands.command('st')
+    @ferozes()
     async def select_command(self, ctx: commands.Context):
         """
         Comando mestre para o cog Student Controller.
