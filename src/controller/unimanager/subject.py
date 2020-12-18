@@ -1,11 +1,11 @@
 # Módulo de controle de matérias.
 # Nota: Somente o proprietário do bot pode invocar alguns desses comandos!
-from controller import ferozes
+from controller.ferozes import ferozes
 from controller.misc import smoothen, split_args
 from discord.ext.commands.core import is_owner
 from discord.message import Message
 from discord.ext import commands
-from dao.subjectdao import SubjectDao
+from dao.unimanager.subjectdao import SubjectDao
 
 
 class SubjectController(commands.Cog, name='Subject Controller: mt'):

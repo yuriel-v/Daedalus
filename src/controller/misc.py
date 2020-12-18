@@ -6,12 +6,13 @@ from os import getenv
 from sys import getsizeof
 from typing import Iterable, Union
 
+from controller.ferozes import ferozes
 from dao import smkr, devsmkr, engin
 from model import initialize_sql
-from model.exam import Exam
-from model.registered import Registered
-from model.student import Student
-from model.subject import Subject
+from model.unimanager.exam import Exam
+from model.unimanager.registered import Registered
+from model.unimanager.student import Student
+from model.unimanager.subject import Subject
 
 daedalus_environment = getenv("DAEDALUS_ENV").upper()
 debug = bool(daedalus_environment == "DEV")
@@ -136,7 +137,8 @@ class Misc(commands.Cog, name='Misc'):
     @commands.Cog.listener(name='on_member_join')
     async def auto_blacksmith(self, member: Member):
         """Automaticamente torna novos membros ferreiros."""
-        await member.add_roles(member.guild.get_role(583789334797352970))
+        if member.guild.id == ferozes:
+            await member.add_roles(member.guild.get_role(583789334797352970))
 
     @commands.command()
     async def emphasize(self, ctx):

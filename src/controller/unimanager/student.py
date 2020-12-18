@@ -1,12 +1,12 @@
 # Módulo de controle de estudantes.
 from time import time
 from discord.message import Message
-from controller import ferozes
+from controller.ferozes import ferozes
 from controller.misc import split_args, dprint, smoothen, uni_avg, avg, nround
-from dao.schedulerdao import SchedulerDao
-from dao.studentdao import StudentDao
+from dao.unimanager.schedulerdao import SchedulerDao
+from dao.unimanager.studentdao import StudentDao
 from discord.ext import commands
-from model.student import Student
+from model.unimanager.student import Student
 
 
 class StudentController(commands.Cog, name='Student Controller: st'):

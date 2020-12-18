@@ -1,6 +1,6 @@
 from typing import Union
 from sqlalchemy.orm.session import Session
-from model.subject import Subject
+from model.unimanager.subject import Subject
 from dao import smkr
 
 

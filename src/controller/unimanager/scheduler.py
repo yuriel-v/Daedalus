@@ -1,13 +1,13 @@
 # Controlador para registro de matrículas em matérias e suas atividades.
 from controller.misc import split_args, smoothen
-from controller import ferozes
+from controller.ferozes import ferozes
 from discord import Message
 from discord.ext import commands
-from dao.schedulerdao import SchedulerDao
-from dao.studentdao import StudentDao
-from dao.subjectdao import SubjectDao
-from model.student import Student
-from model.subject import Subject
+from dao.unimanager.schedulerdao import SchedulerDao
+from dao.unimanager.studentdao import StudentDao
+from dao.unimanager.subjectdao import SubjectDao
+from model.unimanager.student import Student
+from model.unimanager.subject import Subject
 
 
 class ScheduleController(commands.Cog, name='Schedule Controller: sc'):

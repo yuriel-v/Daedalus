@@ -2,7 +2,7 @@
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, Float, ForeignKey
-from model.registered import Registered
+from model.unimanager.registered import Registered
 from model import Base
 
 

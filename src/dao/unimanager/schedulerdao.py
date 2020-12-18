@@ -1,9 +1,9 @@
 from dao import smkr
 from datetime import date
-from model.student import Student
-from model.subject import Subject
-from model.exam import Exam
-from model.registered import Registered
+from model.unimanager.student import Student
+from model.unimanager.subject import Subject
+from model.unimanager.exam import Exam
+from model.unimanager.registered import Registered
 from sqlalchemy.orm.session import Session
 from typing import Union
 

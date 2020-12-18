@@ -3,8 +3,8 @@
 from datetime import date
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, Date, Boolean, ForeignKey, UniqueConstraint, Sequence
-from model.student import Student
-from model.subject import Subject
+from model.unimanager.student import Student
+from model.unimanager.subject import Subject
 from model import Base
 
 
