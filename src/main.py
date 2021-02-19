@@ -76,6 +76,24 @@ def list_cogs(guild_id: int = None):
     return '\n'.join(coglist)
 
 
+# doesn't work as intended, simply detatches and reattaches cogs
+# TODO reattach new, fresh instances of the same cogs
+@bot.command('reload')
+async def reload_cogs(ctx: commands.Context):
+    if not await bot.is_owner(ctx.author):
+        await ctx.send("Só o proprietário pode fazer isso.")
+    else:
+        try:
+            cogs = {x: y for x, y in dict(bot.cogs).items()}
+            for cog in cogs.keys():
+                bot.remove_cog(cog)
+            for cog in cogs.values():
+                bot.add_cog(cog)
+            await ctx.send("Cogs atualizadas.")
+        except Exception:
+            await ctx.send("Algo deu errado. Consulte o log para detalhes.")
+
+
 @bot.command('version')
 async def show_version(ctx: commands.Context):
     string = str(init + init2 % (list_cogs(ctx.guild.id))).split('\n')[2:-1:]

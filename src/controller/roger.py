@@ -49,7 +49,7 @@ class RogerDotNet(commands.Cog, name='Roger'):
             print(f"Exception raised: {error}")
 
     @commands.command(name='?')
-    @commands.cooldown(rate=1, per=10, type=BucketType.user)
+    @commands.cooldown(rate=1, per=5, type=BucketType.user)
     @ferozes()
     async def roger_foto(self, ctx: commands.Context):
         """Você perguntou? O Roger aparece!"""
@@ -61,13 +61,13 @@ class RogerDotNet(commands.Cog, name='Roger'):
 
             if roger_img[0].lower() == "julio_cobra":
                 cobra = True
-                ct = 'Cacilda, agora a cobra fumou. Você tirou o julio_cobra e agora vai pra cadeia.'
+                ct = 'Cacilda, agora a cobra fumou. Você tirou o julio_cobra.'
             else:
                 cobra = False
                 ct = None
             await msg.edit(content=ct, embed=embed)
 
-            if cobra:
+            if cobra and ctx.guild.id == ferozes:
                 await self._aprisionar(ctx)
 
         except Exception as e:
@@ -91,7 +91,7 @@ class RogerDotNet(commands.Cog, name='Roger'):
                 ctx.send(u"Deu sorte, malandro. Não tenho permissão pra te mandar pro xilindró.")
             return
 
-        await ctx.send("Como você tirou o julio_cobra.png, você vai virar prisioneiro por dois minutos.")
+        await ctx.send("Por causa disso, você vai virar prisioneiro por dois minutos.")
         await ctx.author.add_roles(ctx.guild.get_role(778774271869583480))
         await sleep(120)
         try:
