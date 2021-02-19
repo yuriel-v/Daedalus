@@ -33,7 +33,7 @@ class RogerDotNet(commands.Cog, name='Roger'):
             15: "Seus limites só são delimitados por suas palavras"
         }
         self.cmds = {
-            '?': self.roger,
+            '?': self.roger_foto,
             'responde': self.roger_responde
         }
 
