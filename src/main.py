@@ -17,18 +17,12 @@ from os import getenv
 from discord.ext import commands
 from discord.flags import Intents
 from sqlalchemy.orm import close_all_sessions
-from dao import engin, devengin
-from controller import daedalus_version, daedalus_environment, daedalus_token, ferozes
-from model import initialize_sql
+from db import engin, devengin, initialize_sql
+from core.utils import daedalus_version, daedalus_environment, daedalus_token, ferozes
+from core.utils import Misc, arg_types, smoothen
 
 # Imports de módulos customizados
-from controller.misc import Misc, split_args, arg_types, smoothen
-from controller.games import Games
-from controller.roger import RogerDotNet
-from controller.help import DaedalusHelp
-from controller.student import StudentController
-from controller.scheduler import ScheduleController
-from controller.subject import SubjectController
+from cogs import Games, RogerDotNet, DaedalusHelp, StudentController, ScheduleController, SubjectController
 
 # Inicialização
 bot = commands.Bot(
@@ -107,8 +101,8 @@ async def hello(ctx):
 
 
 @bot.command()
-async def argcount(ctx):
-    arguments = split_args(ctx.message.content)
+async def argcount(ctx, *, arguments: str):
+    arguments = arguments.split()
     await ctx.send(f"Arguments passed: {len(arguments)}\nArguments themselves: `{arguments}`\nArgument classes: {arg_types(arguments, repr=True)}")
 
 
@@ -118,13 +112,13 @@ async def listroles(ctx):
 
 
 @bot.command('log')
-async def tolog(ctx):
-    print(split_args(ctx.message.content, islist=False))
+async def tolog(ctx, *, arguments):
+    print(arguments)
 
 
 @bot.command('fmt')
-async def fmt(ctx):
-    await ctx.send(f"```{smoothen(split_args(ctx.message.content, islist=False))}```")
+async def fmt(ctx, *, arguments):
+    await ctx.send(f"```{smoothen(arguments)}```")
 
 # Aqui é só a parte de rodar e terminar o bot.
 bot.run(daedalus_token)
