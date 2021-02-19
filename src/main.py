@@ -24,7 +24,7 @@ from model import initialize_sql
 # Imports de módulos customizados
 from controller.misc import Misc, split_args, arg_types, smoothen
 from controller.games import Games
-from controller.roger import Roger
+from controller.roger import RogerDotNet
 from controller.help import DaedalusHelp
 from controller.student import StudentController
 from controller.scheduler import ScheduleController
@@ -43,7 +43,7 @@ if daedalus_environment == "DEV":
 # Cogs
 bot.add_cog(Misc(bot))
 bot.add_cog(Games(bot))
-bot.add_cog(Roger(bot))
+bot.add_cog(RogerDotNet(bot))
 bot.add_cog(DaedalusHelp(bot))
 bot.add_cog(StudentController(bot))
 bot.add_cog(SubjectController(bot))

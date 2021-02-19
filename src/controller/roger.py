@@ -1,31 +1,36 @@
 # Memes do Roger.
+import requests
+
 from asyncio.tasks import sleep
 from controller import ferozes
-from controller.misc import split_args
+from discord import Message
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 from discord.embeds import Embed
-from discord.file import File
 from discord.colour import Colour
-from os import listdir
-from os.path import isfile, join
+from os import getenv
 from random import randint
 
 
-class Roger(commands.Cog, name='Roger'):
+class RogerDotNet(commands.Cog, name='Roger'):
     def __init__(self, bot):
         self.bot = bot
         self.roger_respostas = {
-            1: "SE LASCAR",
-            2: "Pega no meu canudo",
-            3: "Ah vai tomar banho",
-            4: "NA tu",
-            5: "NA você, NA eu, NA todo mundo",
-            6: "escreva novamente, serumaninho",
-            7: "Cacilda",
-            8: "Justo",
-            9: "sim, é justo",
-            10: "É, talvez"
+            1: "Justo",
+            2: "Sim, é justo",
+            3: "É, talvez",
+            4: "Possível",
+            5: "POG",
+            6: "SE LASCAR",
+            7: "Pega no meu canudo",
+            8: "Ah vai tomar banho",
+            9: "NA tu",
+            10: "Não cara, não",
+            11: "Cacilda",
+            12: "Escreva novamente, serumaninho",
+            13: "NA você, NA eu, NA todo mundo",
+            14: "Y''m bug mg'lloig",
+            15: "Seus limites só são delimitados por suas palavras"
         }
         self.cmds = {
             '?': self.roger,
@@ -33,8 +38,8 @@ class Roger(commands.Cog, name='Roger'):
         }
 
     def ferozes():
-        async def predicate(ctx):
-            return ctx.guild.id == ferozes
+        async def predicate(ctx: commands.Context):
+            return (ctx.guild.id == ferozes) and (ctx.prefix == 'Roger ')
         return commands.check(predicate)
 
     async def cog_command_error(self, ctx: commands.Context, error):
@@ -43,60 +48,74 @@ class Roger(commands.Cog, name='Roger'):
         else:
             print(f"Exception raised: {error}")
 
-    @commands.command('?')
+    @commands.command(name='?')
     @commands.cooldown(rate=1, per=10, type=BucketType.user)
     @ferozes()
-    async def roger(self, ctx: commands.Context):
+    async def roger_foto(self, ctx: commands.Context):
         """Você perguntou? O Roger aparece!"""
-        if ctx.prefix != 'Roger ':
+        msg: Message = await ctx.send("Invocando o Roger...")
+        try:
+            roger_img = self._fetch_roger_image()
+            embed = Embed(description=roger_img[0], colour=Colour(randint(0x000000, 0xFFFFFF)))
+            embed.set_image(url=roger_img[1])
+
+            if roger_img[0].lower() == "julio_cobra":
+                cobra = True
+                ct = 'Cacilda, agora a cobra fumou. Você tirou o julio_cobra e agora vai pra cadeia.'
+            else:
+                cobra = False
+                ct = None
+            await msg.edit(content=ct, embed=embed)
+
+            if cobra:
+                await self._aprisionar(ctx)
+
+        except Exception as e:
+            await msg.edit("Ih, deu zica.")
+            print(f"Zica thrown: {e}")
+
+    def _fetch_roger_image(self):
+        endpoint = "https://api.imgur.com/3/album/xv4Jn5D/images"
+        response = requests.get(url=endpoint, headers={'Authorization': f"Client-ID {getenv('DAEDALUS_IMGUR_TOKEN')}"}).json()['data']
+        image = response[randint(0, len(response) - 1)]
+
+        return (image['description'], image['link'])
+
+    async def _aprisionar(self, ctx: commands.Context):
+        original_roles = [x for x in ctx.author.roles if x.name != '@everyone']
+        try:
+            for role in original_roles:
+                await ctx.author.remove_roles(role)
+        except Exception as e:
+            if 'missing permissions' in str(e).lower():
+                ctx.send(u"Deu sorte, malandro. Não tenho permissão pra te mandar pro xilindró.")
             return
 
-        roger_pics = [f for f in listdir('./src/roger') if isfile(join('./src/roger', f))]
-        fn = str(roger_pics[randint(0, len(roger_pics) - 1)])
-        pic = File(f'./src/roger/{fn}', fn)
-        embed = Embed(description=fn, colour=Colour(randint(0x000000, 0xFFFFFF)))
-        embed.set_image(url=f"attachment://{fn}")
-
-        await ctx.send(file=pic, embed=embed)
-        if fn == 'julio_cobra.png':
-            original_roles = [x for x in ctx.author.roles if x.name != '@everyone']
-
-            try:
-                for role in original_roles:
-                    await ctx.author.remove_roles(role)
-            except Exception as e:
-                if 'missing permissions' in str(e).lower():
-                    ctx.send(u"Deu sorte, malandro. Não tenho permissão pra te mandar pro xilindró.")
-                return
-
-            await ctx.send("Como você tirou o julio_cobra.png, você vai virar prisioneiro por dois minutos.")
-            await ctx.author.add_roles(ctx.guild.get_role(778774271869583480))
-            await sleep(120)
-            try:
-                await ctx.author.remove_roles(ctx.guild.get_role(778774271869583480))
-                for role in original_roles:
-                    await ctx.author.add_roles(role)
-                await ctx.send(f"{ctx.author.mention}: Você não é mais prisioneiro.")
-            except Exception as e:
-                if 'unknown member' in str(e).lower():
-                    escaped = f"""Bem, parece que {ctx.author.name} fugiu da prisão...\n
-                    Ele(a) tinha essas roles: `{[r.name for r in original_roles]}`\n
-                    Se ele(a) for visto(a) novamente, entreguem essas roles de volta porque eu tô me lixando.
-                    """
-                    await ctx.send(escaped)
+        await ctx.send("Como você tirou o julio_cobra.png, você vai virar prisioneiro por dois minutos.")
+        await ctx.author.add_roles(ctx.guild.get_role(778774271869583480))
+        await sleep(120)
+        try:
+            await ctx.author.remove_roles(ctx.guild.get_role(778774271869583480))
+            for role in original_roles:
+                await ctx.author.add_roles(role)
+            await ctx.send(f"{ctx.author.mention}: Você não é mais prisioneiro.")
+        except Exception as e:
+            if 'unknown member' in str(e).lower():
+                # needed to avoid weird indentation shenanigans
+                escaped = f"Bem, parece que {ctx.author.name} fugiu da prisão...\n"
+                escaped += f"Ele(a) tinha essas roles: `{[r.name for r in original_roles]}`\n"
+                escaped += "Se ele(a) for visto(a) novamente, entreguem essas roles de volta porque eu tô me lixando."
+                await ctx.send(escaped)
 
     @commands.command('responde:')
     @ferozes()
-    async def roger_responde(self, ctx: commands.Context):
+    async def roger_responde(self, ctx: commands.Context, *, arguments=None):
         """
         Roger responde: Eu sou bom programador?
 
         Roger diz: SE LASCAR
         """
-        if ctx.prefix != 'Roger ':
-            return
-
-        if split_args(ctx.message.content):
+        if arguments:
             await ctx.send(f"<@450731404532383765> diz: {self.roger_respostas[randint(1, len(self.roger_respostas.keys()))]}")
         else:
             await ctx.send(f"<@450731404532383765> diz: Se lascar, pergunta alguma coisa!")
