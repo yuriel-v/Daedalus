@@ -2,7 +2,7 @@
 import requests
 
 from asyncio.tasks import sleep
-from core.utils import ferozes, yaml
+from core.utils import roger_check, yaml
 from discord import Message
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
@@ -30,7 +30,6 @@ class RogerDotNet(commands.Cog, name='Roger'):
 
     @commands.command(name='?')
     @commands.cooldown(rate=1, per=5, type=BucketType.user)
-    @ferozes()
     async def roger_foto(self, ctx: commands.Context):
         """Você perguntou? O Roger aparece!"""
         msg: Message = await ctx.send("Invocando o Roger...")
@@ -47,7 +46,7 @@ class RogerDotNet(commands.Cog, name='Roger'):
                 ct = None
             await msg.edit(content=ct, embed=embed)
 
-            if cobra and ctx.guild.id == ferozes:
+            if cobra and ctx.guild.id == 567817989806882818:
                 await self._aprisionar(ctx)
 
         except Exception as e:
@@ -88,7 +87,6 @@ class RogerDotNet(commands.Cog, name='Roger'):
                 await ctx.send(escaped)
 
     @commands.command('responde:')
-    @ferozes()
     async def roger_responde(self, ctx: commands.Context, *, arguments=None):
         """
         https://i.gyazo.com/dc5e9bb1f93ebc622b9ae36e3c370fc8.png

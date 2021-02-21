@@ -50,16 +50,19 @@ class SubjectDao(GenericDao):
         if any([len(code) != 3, len(fullname) == 0, semester not in range(0, 11)]):
             return 2
         else:
+            tr = None
             try:
+                tr = self.session.begin_nested()
                 if self.find(terms=code.upper(), by='code') is not None:
                     return 3
                 else:
                     self.session.add(Subject(code=code.upper(), fullname=fullname, semester=abs(semester)))
-                    self.session.commit()
+                    tr.commit()
                     return 0
             except Exception as e:
                 print_exc("Exception caught on SubjectDao.insert:", e)
-                self.session.rollback()
+                if tr is not None:
+                    tr.rollback()
                 return 1
 
     def find(self, terms: Union[int, str], by: str, single_result=True) -> Union[list[Subject], Subject, None]:
@@ -239,11 +242,13 @@ class SubjectDao(GenericDao):
         except Exception:
             return 2
 
+        tr = None
         try:
             cur_sbj = self.find(code.upper() if isinstance(code, str) else code.id, by='code')
             if cur_sbj is None:
                 return 3
             else:
+                tr = self.session.begin_nested()
                 if newcode is not None:
                     cur_sbj.code = str(newcode).upper()
 
@@ -253,9 +258,10 @@ class SubjectDao(GenericDao):
                 if semester is not None:
                     cur_sbj.semester = int(semester)
 
-                self.session.commit()
+                tr.commit()
                 return 0
         except Exception as e:
             print_exc("Exception caught on SubjectDao.update:", e)
-            self.session.rollback()
+            if tr is not None:
+                tr.rollback()
             return 1

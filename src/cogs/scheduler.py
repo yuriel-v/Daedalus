@@ -28,8 +28,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
             'matricular': self.enroll,
             'trancar': self.lock_enrollment,
             'nota': self.update_grade,
-            'status': self.update_status,
-            'sts': self.update_status
+            'status': self.update_status
         }
 
     def cadastrado():
@@ -102,6 +101,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
                 print_exc(f'(ScheduleController) Exception caught at enrolling student:', e)
                 await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
+    @scheduler.command(name='nota')
     async def update_grade(self, ctx: commands.Context, student: Student, *, arguments: str):
         """
         Atualiza a nota de uma matéria em específico.
@@ -164,6 +164,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
                 print_exc('(ScheduleController) Exception caught at updating grade:', e)
                 await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
+    @scheduler.command(name='status')
     async def update_status(self, ctx: commands.Context, student: Student, *, arguments: str):
         """
         Altera o status de um trabalho. Também reconhecido como o comando `sts`.
@@ -227,6 +228,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
                 print_exc('Exception caught at updating status:', e)
                 await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
+    @scheduler.command(name='trancar')
     async def lock_enrollment(self, ctx: commands.Context, student: Student, *, arguments: str):
         """
         Tranca uma, várias ou todas as matérias matriculadas pelo estudante que chamar o comando.

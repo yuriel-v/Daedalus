@@ -49,14 +49,19 @@ class SchedulerDao(GenericDao):
         except Exception:
             raise SyntaxError("At least one object in argument 'subjects' is not a string and cannot be cast to string")
 
+        tr = None
         try:
             student = self.session.query(Student).filter(Student.discord_id == (student if isinstance(student, int) else student.id)).first()
             if student is None or len(subjects) == 0:
                 return {'err': 2}
+            
+            tr = self.session.begin_nested()
+            modified_subjects = dict({})
             try:
                 enrollments = self.find_enrollments(student.id, previous=True, active=False)
                 for reg in enrollments:
                     if reg.subject.code in subjects:
+                        modified_subjects[reg.subject.code] = reg.subject.fullname
 
                         while reg.subject.code in subjects:
                             subjects.remove(reg.subject.code)
@@ -75,7 +80,7 @@ class SchedulerDao(GenericDao):
 
             try:
                 loaded_subjects = self.session.query(Subject).filter(Subject.code.in_(subjects)).all()
-                if not loaded_subjects:
+                if not loaded_subjects and not modified_subjects:
                     return {'err': 3}
 
                 for subj in loaded_subjects:
@@ -89,15 +94,17 @@ class SchedulerDao(GenericDao):
                         registry.exams.append(exam)
                         self.session.add(exam)
                     self.session.add(registry)
+                    modified_subjects[subj.code] = subj.fullname
 
-                self.session.commit()
-                return {sbj.code: sbj.fullname for sbj in loaded_subjects}
+                tr.commit()
+                return modified_subjects
             except Exception as e:
                 print('Caught at adding new subjects')
                 raise e
         except Exception as e:
-            self.session.rollback()
             print_exc(f"Exception caught at registering students: {e}")
+            if tr is not None:
+                tr.rollback()
             return {'err': 1}
 
     def find_enrollments(self, std_id: int, previous=False, active=True) -> list[Registered]:
@@ -249,7 +256,9 @@ class SchedulerDao(GenericDao):
         if exam_type not in range(1, 6):
             raise SyntaxError("Argument 'exam_type' is not an integer between 1 and 5")
 
+        tr = None
         try:
+            tr = self.session.begin_nested()
             if isinstance(student, int):
                 student = self.session.query(Student).filter(Student.discord_id == student).first()
             if isinstance(subject, str):
@@ -266,7 +275,7 @@ class SchedulerDao(GenericDao):
             else:
                 if grade:
                     if int(exam.status) != 1:
-                        self.session.rollback()
+                        tr.rollback()
                         return 4
                     else:
                         exam.grade = nround(newval, 1)
@@ -276,13 +285,14 @@ class SchedulerDao(GenericDao):
                     elif isinstance(newval, int):
                         exam.status = ('OK', 'EPN', 'PND')[newval + 1]
                     else:
-                        self.session.rollback()
+                        tr.rollback()
                         return 2
-                self.session.commit()
+                tr.commit()
                 return 0
         except Exception as e:
             print(f"Exception caught at update grade: {e}")
-            self.session.rollback()
+            if tr is not None:
+                tr.rollback()
             return 1
 
     def lock(self, student: Union[Student, int], subjects: Union[list[str], tuple[str], set[str]], lock_all: bool = False) -> dict:
@@ -322,7 +332,9 @@ class SchedulerDao(GenericDao):
         if not (subjects or lock_all):
             return {'err': 2}
 
+        tr = None
         try:
+            tr = self.session.begin_nested()
             changed = False
             eager_enrollments = self.find_enrollments(student.id)
             for reg in eager_enrollments:
@@ -330,8 +342,10 @@ class SchedulerDao(GenericDao):
                     changed = True
                     reg.active = False
 
+            tr.commit()
             return {0: [reg.subject.fullname for reg in eager_enrollments]} if changed else {'err': 2}
         except Exception as e:
-            self.session.rollback()
             print(f"Exception caught at locking enrollments: {e}")
+            if tr is not None:
+                tr.rollback()
             return {'err': 1}

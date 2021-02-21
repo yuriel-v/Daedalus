@@ -8,7 +8,7 @@ from typing import Iterable, Union
 
 daedalus = {
     'token': getenv("DAEDALUS_TOKEN"),
-    'version': '0.409431',
+    'version': '0.456903',
     'environment': getenv("DAEDALUS_ENV").upper()
 }
 debug = bool(daedalus['environment'] == "DEV")
@@ -17,7 +17,7 @@ yaml = YAML(typ='safe')
 
 def ferozes():
     async def predicate(ctx: commands.Context):
-        return (ctx.guild.id == 567817989806882818) and (ctx.prefix == 'Roger ')
+        return ctx.guild.id == 567817989806882818
     return commands.check(predicate)
 
 

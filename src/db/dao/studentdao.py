@@ -9,7 +9,7 @@ class StudentDao(GenericDao):
     def __init__(self, session=None, autoinit=True):
         super().__init__(session=session, autoinit=autoinit)
 
-    def insert(self, discord_id: int, name: str, registry: int) -> int:
+    def insert(self, discord_id: int, name: str, registry: int) -> dict:
         """
         Cadastra um estudante novo.
         Caso o `discord_id` já exista no banco de dados, o estudante é tido como já cadastrado, e nada é feito.
@@ -19,10 +19,11 @@ class StudentDao(GenericDao):
         - `registry: int`: O número de matrícula do estudante a ser cadastrado.
 
         ### Retorno
-        - `0`: Operação bem-sucedida;
-        - `1`: Erro desconhecido, usuário não foi cadastrado;
-        - `2`: Erro de sintaxe nos argumentos passados;
-        - `3`: Usuário já existente.
+        - Um dict no formato `{std.discord_id: std}` em caso de sucesso.
+        - Casos excepcionais:
+            - `{'err': 1}`: Erro desconhecido, usuário não foi cadastrado;
+            - `{'err': 2}`: Erro de sintaxe nos argumentos passados;
+            - `{'err': 3}`: Usuário já existente.
 
         ### Levanta
         - `SyntaxError` caso os argumentos não possam ser convertidos para seus respectivos tipos.
@@ -40,22 +41,26 @@ class StudentDao(GenericDao):
         try:
             #    no name      or first name only or                   registry not in 20xxxxxxxx format
             if len(name) == 0 or ' ' not in name or (len(str(registry)) != 10 and not str(registry).startswith('20')):
-                return 2
+                return {'err': 2}
         except Exception as e:
             print_exc(f"Exception caught on StudentDao.insert:", e)
-            return 1
+            return {'err': 1}
 
         if self.find(discord_id, by='id') is not None:
-            return 3
+            return {'err': 3}
         else:
+            tr = None
             try:
-                self.session.add(Student(name=name, registry=registry, discord_id=discord_id))
-                self.session.commit()
-                return 0
+                tr = self.session.begin_nested()
+                new_student = Student(name=name, registry=registry, discord_id=discord_id)
+                self.session.add(new_student)
+                tr.commit()
+                return {new_student.discord_id: new_student}
             except Exception as e:
                 print_exc(f"Exception caught on StudentDao.insert:", e)
-                self.session.rollback()
-                return 1
+                if tr is not None:
+                    tr.rollback()
+                return {'err': 1}
 
     def find(self, terms: Union[int, str], by: str) -> Union[list[Student], Student, None]:
         """
@@ -111,7 +116,7 @@ class StudentDao(GenericDao):
         """
         return tuple([int(std.discord_id) for std in self.find_all()])
 
-    def update(self, student: Union[int, Student], name=None, registry=None) -> int:
+    def update(self, student: Union[int, Student], name=None, registry=None) -> dict:
         """
         Atualiza o cadastro de um estudante.
         ### Params
@@ -121,10 +126,11 @@ class StudentDao(GenericDao):
         - Pelo menos um dentre `name` e `registry` precisa não ser `None`.
 
         ### Retorno
-        - `0`: Operação bem-sucedida;
-        - `1`: Exceção levantada, transação sofreu rollback;
-        - `2`: Estudante inexistente;
-        - `3`: Nada a modificar (`name` e `registry` ambos são `None`).
+        - Um dict no formato `{std.discord_id: std}` em caso de sucesso.
+        - Casos excepcionais:
+            - `{'err', 1}`: Exceção levantada, transação sofreu rollback;
+            - `{'err', 2}`: Estudante inexistente;
+            - `{'err', 3}`: Nada a modificar (`name` e `registry` ambos são `None`).
 
         ### Levanta
         - `SyntaxError` caso `student` não seja uma instância de `int` nem `Student`, nem possa ser convertido para `int`.
@@ -136,24 +142,27 @@ class StudentDao(GenericDao):
             raise SyntaxError("Argument 'student' is neither an instance of Student nor int, nor can it be casted to int")
 
         if all([name is None, registry is None]):
-            return 3
+            return {'err', 3}
 
+        tr = None
         try:
+            tr = self.session.begin_nested()
             cur_student = self.find(student if isinstance(student, int) else student.id, by='id')
             if cur_student is None:
-                return 2
+                return {'err', 2}
 
             if name is not None:
                 cur_student.name = str(name)
             if registry is not None:
                 cur_student.registry = int(registry)
 
-            self.session.commit()
-            return 0
+            tr.commit()
+            return {cur_student.discord_id: cur_student}
         except Exception as e:
             print_exc("Exception caught on StudentDao.update:", e)
-            self.session.rollback()
-            return 1
+            if tr is not None:
+                tr.rollback()
+            return {'err': 1}
 
     def delete(self, discord_id: int) -> int:
         """
@@ -174,12 +183,15 @@ class StudentDao(GenericDao):
         except Exception:
             raise SyntaxError("Discord ID is not an instance of 'int' and could not be cast to 'int' either")
 
+        tr = None
         try:
+            tr = self.session.begin_nested()
             d = self.session.query(Student).filter(Student.discord_id == discord_id)
             d.delete(synchronize_session=False)
-            self.session.commit()
+            tr.commit()
             return 0
         except Exception as e:
             print_exc("Exception caught on StudentDao.delete:", e)
-            self.session.rollback()
+            if tr is not None:
+                tr.rollback()
             return 1
