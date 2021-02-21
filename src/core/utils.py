@@ -1,14 +1,10 @@
 # Módulo de sei lá o quê. Utilidades em geral. E memes.
 from discord.ext import commands
-from discord.ext.commands.core import is_owner
 from discord import Member
 from os import getenv
-from sqlalchemy.orm import sessionmaker
+from ruamel.yaml import YAML
 from sys import getsizeof
 from typing import Iterable, Union
-
-from db import engin, devengin, initialize_sql
-from db.model import Exam, Registered, Student, Subject
 
 daedalus_token = getenv("DAEDALUS_TOKEN")
 daedalus_version = '0.7.6'
@@ -16,8 +12,14 @@ daedalus_environment = getenv("DAEDALUS_ENV").upper()
 daedalus_environment = getenv("DAEDALUS_ENV").upper()
 ferozes = 567817989806882818
 debug = bool(daedalus_environment == "DEV")
-smkr = sessionmaker(bind=engin)
-devsmkr = sessionmaker(bind=devengin)
+yaml = YAML(typ='safe')
+
+
+def print_exc(msg: str, e: Exception):
+    if debug:
+        print(f"{msg}\n{e.with_traceback()}")
+    else:
+        print(f"{msg}\n{e}")
 
 
 def nround(number: float, decimals=1):
@@ -99,10 +101,10 @@ def smoothen(message: Iterable):
     - Para dicionários, somente os valores, convertidos para string, são 'encaixados'.
     """
     if isinstance(message, Union[list, tuple, set].__args__):
-        message = [str(x) for x in message]
+        message = tuple([str(x) for x in message])
         dashes = len(max(message, key=len))
     elif isinstance(message, dict):
-        message = [str(x) for x in message.values()]
+        message = tuple([str(x) for x in message.values()])
         dashes = len(max(message, key=len))
     else:
         message = str(message)
@@ -114,12 +116,10 @@ def smoothen(message: Iterable):
         formatted_message += f'| {message} |\n'
     else:
         for string in message:
-            spaces = dashes - 1 - len(string)
-            # if string is just a string of dashes, extend it until box boundary if it's not there already
-            if string == len(string) * '-' and spaces > 1:
-                string += '-' * (spaces - 1)
-                spaces = 1
-            formatted_message += f'| {string}{" " * spaces}|\n'
+            if string == len(string) * '-':
+                formatted_message += '|' + '-'.ljust(dashes, '-') + '|\n'
+            else:
+                formatted_message += '| ' + string.ljust(dashes - 2) + ' |\n'
 
     formatted_message += f'+{"-" * dashes}+\n'
     return formatted_message
@@ -131,13 +131,16 @@ class Misc(commands.Cog, name='Misc'):
         self.cmds = {
             'emphasize': self.emphasize,
             'code': self.text_code,
-            'sizeof': self.sizeof_value,
-            'drop': self.drop_tables,
-            'backup': self.move_to_dev_db,
-            'restore': self.move_to_prd_db
+            'sizeof': self.sizeof_value
         }
 
+    def ferozes():
+        async def predicate(ctx: commands.Context):
+            return (ctx.guild.id == ferozes) and (ctx.prefix == 'Roger ')
+        return commands.check(predicate)
+
     @commands.Cog.listener(name='on_member_join')
+    @ferozes()
     async def auto_blacksmith(self, member: Member):
         """Automaticamente torna novos membros ferreiros."""
         await member.add_roles(member.guild.get_role(583789334797352970))
@@ -173,165 +176,6 @@ class Misc(commands.Cog, name='Misc'):
                 numba = int(args[0])
 
             await ctx.send(f"Tamanho de `{numba}`: {getsizeof(numba)} bytes.")
-
-    @commands.command('drop')
-    async def drop_tables(ctx):
-        """
-        Faz um `DROP TABLE` em 'exams' e 'registered', apagando todas as provas e matrículas.
-        As tabelas são reconstruídas após isso.
-        - Somente o proprietário pode usar esse comando!
-        """
-        if not is_owner():
-            await ctx.send("Somente o proprietário pode rodar esse comando.")
-            return
-        Exam.__table__.drop()
-        Registered.__table__.drop()
-        initialize_sql(engin)
-        await ctx.send("Feito. Verifique o log para confirmação.")
-
-    @commands.command('backup')
-    async def move_to_dev_db(ctx):
-        """
-        Copia estudantes e matérias no BD de produção (Heroku Postgres) para o SQLite de desenvolvimento.
-        - Somente o proprietário pode usar esse comando!
-        """
-        if str(ctx.author.id) != getenv("DAEDALUS_OWNERID"):
-            await ctx.send("Somente o proprietário pode rodar esse comando.")
-        elif daedalus_environment != "DEV":
-            return
-        else:
-            try:
-                devsession = devsmkr()
-                session = smkr()
-                print("---------- Sessions initialized ----------")
-            except Exception:
-                print("Exception caught while initializing sessions and databases")
-                return
-
-            try:
-                prd_students = session.query(Student).all()
-                prd_subjects = session.query(Subject).all()
-                print("---------- Subjects and students fetched ----------")
-            except Exception as e:
-                print(f"Exception caught while fetching current data from PRD DB: {e}")
-                devsession.close()
-                session.close()
-                return
-
-            try:
-                dev_students = [Student(
-                    id=int(student.id),
-                    name=str(student.name),
-                    registry=int(student.registry),
-                    discord_id=int(student.discord_id)
-                ) for student in prd_students]
-
-                dev_subjects = [Subject(
-                    id=int(subject.id),
-                    code=str(subject.code),
-                    fullname=str(subject.fullname),
-                    semester=int(subject.semester)
-                ) for subject in prd_subjects]
-                print("---------- Subjects and students copied ----------")
-            except Exception as e:
-                print("Exception caught while sanitizing data")
-                devsession.close()
-                session.close()
-                return
-
-            try:
-                session.expunge_all()
-                devsession.add_all(dev_students)
-                devsession.add_all(dev_subjects)
-                print("---------- Data added to DEV session ----------")
-            except Exception:
-                print("Exception caught while adding current data to DEV session")
-                devsession.close()
-                session.close()
-                return
-
-            try:
-                devsession.commit()
-                session.rollback()
-                print("---------- Changes committed ----------")
-                await ctx.send("Feito. Verifique o log para confirmação.")
-            except Exception:
-                print("Exception caught while committing changes to DEV DB")
-            finally:
-                devsession.close()
-                session.close()
-
-    @commands.command('restore')
-    async def move_to_prd_db(ctx):
-        """
-        Copia estudantes e matérias no SQLite de desenvolvimento para o BD de produção (Heroku Postgres).
-        - Somente o proprietário pode usar esse comando!
-        """
-        if str(ctx.author.id) != getenv("DAEDALUS_OWNERID"):
-            await ctx.send("Somente o proprietário pode rodar esse comando.")
-        elif daedalus_environment != "DEV":
-            return
-        else:
-            try:
-                devsession = devsmkr()
-                session = smkr()
-                print("---------- Sessions initialized ----------")
-            except Exception:
-                print("Exception caught while initializing sessions and databases")
-                return
-
-            try:
-                dev_students = devsession.query(Student).all()
-                dev_subjects = devsession.query(Subject).all()
-                print("---------- Subjects and students fetched ----------")
-            except Exception:
-                print("Exception caught while fetching current data from DEV DB")
-                devsession.close()
-                session.close()
-                return
-
-            try:
-                prd_students = [Student(
-                    id=int(student.id),
-                    name=str(student.name),
-                    registry=int(student.registry),
-                    discord_id=int(student.discord_id)
-                ) for student in dev_students]
-
-                prd_subjects = [Subject(
-                    id=int(subject.id),
-                    code=str(subject.code),
-                    fullname=str(subject.fullname),
-                    semester=int(subject.semester)
-                ) for subject in dev_subjects]
-                print("---------- Subjects and students copied ----------")
-            except Exception as e:
-                print("Exception caught while sanitizing data")
-                devsession.close()
-                session.close()
-                return
-
-            try:
-                devsession.expunge_all()
-                session.add_all(prd_students)
-                session.add_all(prd_subjects)
-                print("---------- Data added to PRD session ----------")
-            except Exception:
-                print("Exception caught while adding current data to PRD session")
-                devsession.close()
-                session.close()
-                return
-
-            try:
-                session.commit()
-                devsession.rollback()
-                print("---------- Changes committed ----------")
-                await ctx.send("Feito. Verifique o log para confirmação.")
-            except Exception:
-                print("Exception caught while committing changes to PRD DB")
-            finally:
-                devsession.close()
-                session.close()
 
     def cog_info(self, command=None) -> str:
         if command is not None and str(command).lower() in self.cmds.keys():

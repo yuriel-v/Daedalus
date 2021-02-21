@@ -48,8 +48,8 @@ Status:
 - 3: Pendente
 
 Tipo de trabalho:
-- 1: Prova AV1 (7pt)
-- 2: Trabalho AV1 (3pt)
+- 1: Prova AV1 (8pt)
+- 2: Trabalho AV1 (2pt)
 - 3: Prova AV2 (8pt)
 - 4: Trabalho AV2 (2pt)
 - 5: Prova AV3 (10pt)

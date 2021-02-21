@@ -2,7 +2,7 @@
 import requests
 
 from asyncio.tasks import sleep
-from controller import ferozes
+from core.utils import ferozes
 from discord import Message
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType

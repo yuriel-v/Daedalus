@@ -1,15 +1,5 @@
 discord.py
 SQLALchemy
-certifi
-click
-Flask
-flask-heroku
-Flask-SQLAlchemy
-itsdangerous
-Jinja2
-MarkupSafe
 psycopg2
-Werkzeug
-gunicorn
-flask_cors
 requests
+ruamel.yaml
