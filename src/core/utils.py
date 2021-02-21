@@ -6,13 +6,19 @@ from ruamel.yaml import YAML
 from sys import getsizeof
 from typing import Iterable, Union
 
-daedalus_token = getenv("DAEDALUS_TOKEN")
-daedalus_version = '0.7.6'
-daedalus_environment = getenv("DAEDALUS_ENV").upper()
-daedalus_environment = getenv("DAEDALUS_ENV").upper()
-ferozes = 567817989806882818
-debug = bool(daedalus_environment == "DEV")
+daedalus = {
+    'token': getenv("DAEDALUS_TOKEN"),
+    'version': '0.409431',
+    'environment': getenv("DAEDALUS_ENV").upper()
+}
+debug = bool(daedalus['environment'] == "DEV")
 yaml = YAML(typ='safe')
+
+
+def ferozes():
+    async def predicate(ctx: commands.Context):
+        return (ctx.guild.id == 567817989806882818) and (ctx.prefix == 'Roger ')
+    return commands.check(predicate)
 
 
 def print_exc(msg: str, e: Exception):

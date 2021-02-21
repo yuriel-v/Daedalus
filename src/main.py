@@ -21,7 +21,7 @@ from discord.ext import commands
 from discord.flags import Intents
 from sqlalchemy.orm import close_all_sessions
 from db import engin, devengin, initialize_sql
-from core.utils import daedalus_version, daedalus_environment, daedalus_token, ferozes
+from core.utils import daedalus, ferozes
 from core.utils import Misc, arg_types, smoothen, print_exc
 
 # Imports de módulos customizados
@@ -35,7 +35,7 @@ bot = commands.Bot(
     help_command=None
 )
 initialize_sql(engin)
-if daedalus_environment == "DEV":
+if daedalus['environment'] == "DEV":
     initialize_sql(devengin)
 
 # Cogs
@@ -50,7 +50,7 @@ bot.add_cog(ScheduleController(bot))
 # Mensagem de inicialização
 init = f"""
 =========================================================================
-Project Daedalus v{daedalus_version} - {daedalus_environment} environment
+Project Daedalus v{daedalus['version']} - {daedalus['environment']} environment
 All systems go."""
 init2 = """
 Loaded cogs:
@@ -99,29 +99,30 @@ async def show_version(ctx: commands.Context):
 
 
 @bot.command()
-async def hello(ctx):
+async def hello(ctx: commands.Context):
     """Hello, WARUDO!!"""
     await ctx.send(f"Hello, {ctx.author.name} - or should I call you {ctx.author.nick}? Either way, hello.")
 
 
 @bot.command()
-async def argcount(ctx, *, arguments: str):
+async def argcount(ctx: commands.Context, *, arguments: str):
     arguments = arguments.split()
     await ctx.send(f"Arguments passed: {len(arguments)}\nArguments themselves: `{arguments}`\nArgument classes: {arg_types(arguments, repr=True)}")
 
 
 @bot.command()
-async def listroles(ctx):
+async def listroles(ctx: commands.Context):
     await ctx.send(f"Suas roles: `{[r.name for r in ctx.author.roles if r.name != '@everyone']}`")
 
 
 @bot.command('log')
-async def tolog(ctx, *, arguments):
+async def tolog(ctx: commands.Context, *, arguments):
     print(arguments)
+    ctx.send("Logged message.")
 
 
 @bot.command('fmt')
-async def fmt(ctx, *, arguments):
+async def fmt(ctx: commands.Context, *, arguments):
     await ctx.send(f"```{smoothen(arguments)}```")
 
 
@@ -157,6 +158,6 @@ def main(*args, **kwargs):
 # Aqui é só a parte de rodar e terminar o bot.
 if __name__ == "__main__":
     # bot.run(daedalus_token)
-    main(daedalus_token)
+    main(daedalus['token'])
     close_all_sessions()
     print('Bye')

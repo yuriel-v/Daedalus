@@ -1,38 +1,34 @@
 from core.utils import print_exc, nround
-from db import DBSession
 from datetime import date
+from db.dao.genericdao import GenericDao
 from db.model import Student, Subject, Exam, Registered
-from sqlalchemy.orm import Query, scoped_session, Session
+from sqlalchemy.orm import Query
 from typing import Union
 
 
-class SchedulerDao:
-    def __init__(self, session=None):
+class SchedulerDao(GenericDao):
+    def __init__(self, session=None, autoinit=True):
+        super().__init__(session=session, autoinit=autoinit)
         self.cur_semester = date(month=(1 if date.today().month < 7 else 7), day=1, year=date.today().year)
-        if session is None or not isinstance(session, Union[Session, scoped_session].__args__):
-            self.session: scoped_session = DBSession()
-        else:
-            self.session = session
-        self.session.expire_on_commit = False
 
-    def destroy(self):
-        self.session.remove()
-
-    def register(self, student: Union[Student, int], subjects: Union[list[str], tuple[str], set[str]]) -> int:
+    def register(self, student: Union[Student, int], subjects: Union[list[str], tuple[str], set[str]]) -> dict:
         """
         Matricula um estudante em uma ou várias matérias.\n
         Se a matéria for trancada, ela é reativada.
         Se a matéria for de um semestre anterior, todos os seus trabalhos são redefinidos.
         ### Params
-        - `student: Student | int`: O estudante ingressando nas matérias especificadas;
+        - `student: Student | int`: O estudante (ou seu ID Discord) ingressando nas matérias especificadas;
         - `subjects: list | tuple | set`: Um iterável contendo os códigos (todos `str`) das matérias a serem registradas.
 
         ### Retorno
-        - `0`: Operação bem-sucedida;
-        - `1`: Exceção lançada, transação sofreu rollback;
-        - `2`: Erro de sintaxe nos argumentos passados:
-            - Estudante nulo ou inexistente;
-            - Lista de matérias válidas vazia
+        - Um dict com o formato `sbj.code: sbj.fullname` para cada item.
+        - Casos excepcionais:
+          - `{'err': 1}`: Exceção lançada, transação sofreu rollback;
+          - `{'err': 2}`: Erro de sintaxe nos argumentos passados:
+              - Estudante nulo ou inexistente;
+              - Lista de matérias vazia
+          - `{'err': 3}`: Lista de matérias válidas vazia, nada a matricular.
+              - Isso é diferente do erro 2, onde o argumento `subjects` é vazio ou nulo. No erro 3, nenhuma matéria com os códigos informados foi encontrada.
 
         ### Levanta
         - `SyntaxError` nos seguintes casos:
@@ -40,7 +36,7 @@ class SchedulerDao:
             - Caso os valores de `subject` não sejam todos `str`s nem possam ser convertidas para tal.
         """
         if not all([bool(student), bool(subjects)]):
-            return 2
+            return {'err': 2}
 
         try:
             if not isinstance(student, Union[Student, int].__args__):
@@ -56,7 +52,7 @@ class SchedulerDao:
         try:
             student = self.session.query(Student).filter(Student.discord_id == (student if isinstance(student, int) else student.id)).first()
             if student is None or len(subjects) == 0:
-                return 2
+                return {'err': 2}
             try:
                 enrollments = self.find_enrollments(student.id, previous=True, active=False)
                 for reg in enrollments:
@@ -79,6 +75,8 @@ class SchedulerDao:
 
             try:
                 loaded_subjects = self.session.query(Subject).filter(Subject.code.in_(subjects)).all()
+                if not loaded_subjects:
+                    return {'err': 3}
 
                 for subj in loaded_subjects:
                     registry = Registered(semester=self.cur_semester, active=True)
@@ -93,14 +91,14 @@ class SchedulerDao:
                     self.session.add(registry)
 
                 self.session.commit()
-                return 0
+                return {sbj.code: sbj.fullname for sbj in loaded_subjects}
             except Exception as e:
                 print('Caught at adding new subjects')
                 raise e
         except Exception as e:
             self.session.rollback()
             print_exc(f"Exception caught at registering students: {e}")
-            return 1
+            return {'err': 1}
 
     def find_enrollments(self, std_id: int, previous=False, active=True) -> list[Registered]:
         """
@@ -199,7 +197,7 @@ class SchedulerDao:
             print_exc('Exception caught at SchedulerDao.find_exam:', e)
             return None
 
-    def update(self, student: Union[Student, int], subject: Union[Subject, str], exam_type: int, newval, grade: bool, current=True, active=True) -> int:
+    def update(self, student: Union[Student, int], subject: Union[Subject, str], exam_type: int, newval, grade: bool, current=True, active=True) -> dict:
         """
         Atualiza um dado em um trabalho.
         ### Params
@@ -217,11 +215,12 @@ class SchedulerDao:
           - `5`: Prova AV3
 
         ### Retorno
-        - `0`: Operação bem-sucedida;
-        - `1`: Exceção lançada, transação sofreu rollback;
-        - `2`: Erro de sintaxe nos argumentos passados.
-        - `3`: Trabalho não encontrado.
-        - `4`: (Atualização de nota) Trabalho ainda não entregue. Não se atualiza notas de trabalhos não entregues.
+        - Um dict no formato `{sbj.fullname: 0}` no caso de sucesso.
+        - Casos excepcionais:
+            - `{'err': 1}`: Exceção lançada, transação sofreu rollback;
+            - `{'err': 2}`: Erro de sintaxe nos argumentos passados.
+            - `{'err': 3}`: Trabalho não encontrado.
+            - `{'err': 4}`: (Atualização de nota) Trabalho ainda não entregue. Não se atualiza notas de trabalhos não entregues.
 
         ### Levanta
         - `SyntaxError` nos casos a seguir:
@@ -286,7 +285,7 @@ class SchedulerDao:
             self.session.rollback()
             return 1
 
-    def lock(self, student: Union[Student, int], subjects: Union[list[str], tuple[str], set[str]], lock_all: bool = False) -> int:
+    def lock(self, student: Union[Student, int], subjects: Union[list[str], tuple[str], set[str]], lock_all: bool = False) -> dict:
         """
         Tranca uma, várias ou todas as matrículas de um estudante.
         ### Params
@@ -295,9 +294,10 @@ class SchedulerDao:
         - `lock_all: bool`: Caso `True`, tranca todas as matérias do estudante.
 
         ### Retorno
-        - `0`: Operação bem-sucedida;
-        - `1`: Exceção lançada, transação sofreu rollback;
-        - `2`: Nada a trancar.
+        - Um dict no formato `{0: [sbj1.fullname, sbj2.fullname, ...]}` em caso de sucesso.
+        - Casos excepcionais:
+            - `{'err': 1}`: Exceção lançada, transação sofreu rollback;
+            - `{'err': 2}`: Nada a trancar.
 
         ### Levanta
         - `SyntaxError` nos casos a seguir:
@@ -320,7 +320,7 @@ class SchedulerDao:
             raise SyntaxError("At least one object in argument 'subjects' is not a string and cannot be cast to string")
 
         if not (subjects or lock_all):
-            return 2
+            return {'err': 2}
 
         try:
             changed = False
@@ -330,8 +330,8 @@ class SchedulerDao:
                     changed = True
                     reg.active = False
 
-            return 0 if changed else 2
+            return {0: [reg.subject.fullname for reg in eager_enrollments]} if changed else {'err': 2}
         except Exception as e:
             self.session.rollback()
             print(f"Exception caught at locking enrollments: {e}")
-            return 1
+            return {'err': 1}

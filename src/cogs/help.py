@@ -1,10 +1,9 @@
 # Módulo de ajuda aos comandos do bot.
+from core.utils import daedalus
 from discord.ext import commands
-from controller.misc import split_args
-from controller import daedalus_environment, daedalus_version
 
 
-default_message = f"""Projeto Daedalus, versão {daedalus_version}, ambiente {daedalus_environment}.
+default_message = f"""Projeto Daedalus, versão {daedalus['version']}, ambiente {daedalus['environment']}.
 ---
 Daedalus é um bot feito em Python 3.9.0 utilizando em grande parte os módulos
 discord.py e SQLAlchemy.
@@ -24,9 +23,9 @@ class DaedalusHelp(commands.Cog, name='Daedalus Help'):
         self.bot: commands.Bot = bot
 
     @commands.command('dhelp')
-    async def cmd_parser(self, ctx: commands.Context):
+    async def cmd_parser(self, ctx: commands.Context, *, arguments):
         """Comando de ajuda específico para o bot Daedalus."""
-        arguments = split_args(ctx.message.content)
+        arguments = arguments.split()
         nl = '\n'
         global default_message
         msg = default_message + f'\nCogs ativos:\n{nl.join([f"- {x}" for x in self.bot.cogs.keys()])}'
@@ -58,4 +57,4 @@ class DaedalusHelp(commands.Cog, name='Daedalus Help'):
                     if str(cmd.name).lower() == arguments[0].lower():
                         msg = cmd.help
                         break
-        await ctx.send('Ajuda: ```%s```' % (msg.replace('`', "'")))
+        await ctx.send('Ajuda: ```md\n%s```' % (msg.replace('`', "'")))

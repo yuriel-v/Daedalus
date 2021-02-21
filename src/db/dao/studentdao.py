@@ -1,20 +1,13 @@
-from typing import Union
-from sqlalchemy.orm import Query, Session, scoped_session
 from core.utils import print_exc
+from db.dao.genericdao import GenericDao
 from db.model.student import Student
-from db import DBSession
+from sqlalchemy.orm import Query
+from typing import Union
 
 
-class StudentDao:
-    def __init__(self, session=None):
-        if session is None or not isinstance(session, Union[Session, scoped_session].__args__):
-            self.session: scoped_session = DBSession()
-        else:
-            self.session = session
-        self.session.expire_on_commit = False
-
-    def destroy(self):
-        self.session.remove()
+class StudentDao(GenericDao):
+    def __init__(self, session=None, autoinit=True):
+        super().__init__(session=session, autoinit=autoinit)
 
     def insert(self, discord_id: int, name: str, registry: int) -> int:
         """
@@ -114,8 +107,9 @@ class StudentDao:
     def find_all_ids(self) -> tuple[int]:
         """
         Busca todos os IDs Discord dos estudantes cadastrados.
+        Este método não depende de sessão.
         """
-        return tuple([std.discord_id for std in self.find_all()])
+        return tuple([int(std.discord_id) for std in self.find_all()])
 
     def update(self, student: Union[int, Student], name=None, registry=None) -> int:
         """

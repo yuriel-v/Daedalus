@@ -2,7 +2,7 @@
 import requests
 
 from asyncio.tasks import sleep
-from core.utils import ferozes
+from core.utils import ferozes, yaml
 from discord import Message
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
@@ -15,32 +15,12 @@ from random import randint
 class RogerDotNet(commands.Cog, name='Roger'):
     def __init__(self, bot):
         self.bot = bot
-        self.roger_respostas = {
-            1: "Justo",
-            2: "Sim, é justo",
-            3: "É, talvez",
-            4: "Possível",
-            5: "POG",
-            6: "SE LASCAR",
-            7: "Pega no meu canudo",
-            8: "Ah vai tomar banho",
-            9: "NA tu",
-            10: "Não cara, não",
-            11: "Cacilda",
-            12: "Escreva novamente, serumaninho",
-            13: "NA você, NA eu, NA todo mundo",
-            14: "Y''m bug mg'lloig",
-            15: "Seus limites só são delimitados por suas palavras"
-        }
+        with open('./src/resources/roger.yml', encoding='utf-8') as file:
+            self.roger_respostas = yaml.load(file)['roger_respostas']
         self.cmds = {
             '?': self.roger_foto,
             'responde': self.roger_responde
         }
-
-    def ferozes():
-        async def predicate(ctx: commands.Context):
-            return (ctx.guild.id == ferozes) and (ctx.prefix == 'Roger ')
-        return commands.check(predicate)
 
     async def cog_command_error(self, ctx: commands.Context, error):
         if isinstance(error, commands.CommandOnCooldown):
@@ -111,9 +91,7 @@ class RogerDotNet(commands.Cog, name='Roger'):
     @ferozes()
     async def roger_responde(self, ctx: commands.Context, *, arguments=None):
         """
-        Roger responde: Eu sou bom programador?
-
-        Roger diz: SE LASCAR
+        https://i.gyazo.com/dc5e9bb1f93ebc622b9ae36e3c370fc8.png
         """
         if arguments:
             await ctx.send(f"<@450731404532383765> diz: {self.roger_respostas[randint(1, len(self.roger_respostas.keys()))]}")

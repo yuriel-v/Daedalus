@@ -1,17 +1,13 @@
 from core.utils import print_exc
-from db import DBSession
+from db.dao.genericdao import GenericDao
 from db.model import Subject
-from sqlalchemy.orm import Session, scoped_session, Query
+from sqlalchemy.orm import Query
 from typing import Union
 
 
-class SubjectDao:
-    def __init__(self, session=None):
-        if session is None or not isinstance(session, Union[Session, scoped_session].__args__):
-            self.session: scoped_session = DBSession()
-        else:
-            self.session = session
-        self.session.expire_on_commit = False
+class SubjectDao(GenericDao):
+    def __init__(self, session=None, autoinit=True):
+        super().__init__(session=session, autoinit=autoinit)
 
     def insert(self, code: str, fullname: str, semester: int) -> int:
         """
@@ -121,6 +117,60 @@ class SubjectDao:
         except Exception as e:
             print_exc("Exception caught on SubjectDao.find:", e)
             return None
+
+    def find_many(self, terms: list[str], by: str) -> list[Subject]:
+        """
+        Busca por matérias dentro da lista de termos especificada.
+        ### Params
+        - `terms: list[str]`: Uma lista de strings contendo cada termo de pesquisa;
+        - `by: str`: O critério de pesquisa. Dever ser um dos valores:
+          - `'code'`: Busca por código de matéria;
+          - `'name'`: Busca por nome, parcial ou completo;
+          - `'semester'`: Busca por semestre. `terms` deverá ser um `int` ou poder ser convertido para `int`.
+
+        ### Retorno
+        - Uma lista de instâncias de `Subject` correspondentes a todos os termos especificados, ou uma lista vazia.
+
+        ### Levanta
+        - `SyntaxError` nos seguintes casos:
+          - `by` não é uma string com um dos valores válidos acima;
+          - Caso `by` seja `'code'` ou `'name'`:
+              - Pelo menos um elemento de `terms` não é uma `str` nem pode ser convertido para `str`.
+          - Caso `by` seja `'semester'`:
+              - Pelo menos um elemento de `terms` não é um `int` nem pode ser convertido para `int`.
+        """
+        if not isinstance(by, str) or by.lower() not in ('code', 'name', 'semester'):
+            raise SyntaxError("Argument 'by' is not a string with a valid value")
+
+        by = by.lower()
+        if by in ('code', 'name'):
+            try:
+                if by == 'code':
+                    terms = tuple([str(term).upper() for term in terms if bool(term)])
+                else:
+                    terms = tuple([str(term) for term in terms if bool(term)])
+            except Exception:
+                raise SyntaxError("At least one argument in 'terms' is not a str and cannot be cast to str")
+
+        if by == 'semester':
+            try:
+                terms = tuple([int(term) for term in terms])
+            except Exception:
+                raise SyntaxError("At least one argument in 'terms' is not an int and cannot be cast to int")
+
+        try:
+            q: Query = self.session.query(Subject)
+            if by == 'code':
+                q = q.filter(Subject.code.in_(terms))
+            elif by == 'name':
+                q = q.filter(Subject.fullname.in_(terms))
+            else:
+                q = q.filter(Subject.semester.in_(terms))
+
+            return q.all()
+        except Exception as e:
+            print_exc("Exception caught on SubjectDao.find_many:", e)
+            return []
 
     def find_all(self) -> list[Subject]:
         """
