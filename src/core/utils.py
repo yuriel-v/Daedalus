@@ -8,7 +8,7 @@ from typing import Iterable, Union
 
 daedalus = {
     'token': getenv("DAEDALUS_TOKEN"),
-    'version': '0.456903',
+    'version': '0.523299',
     'environment': getenv("DAEDALUS_ENV").upper()
 }
 debug = bool(daedalus['environment'] == "DEV")

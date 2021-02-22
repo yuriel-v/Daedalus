@@ -30,9 +30,9 @@ class StudentController(commands.Cog, name='Student Controller: st'):
         """
         if ctx.invoked_subcommand is None:
             if not arguments:
-                await ctx.send("Sintaxe: `>>st comando argumentos`")
+                await ctx.send("Sintaxe: `>>st comando argumentos`\nPara uma lista de comandos, use `>>help st`.")
             else:
-                await ctx.send("Comando inválido. Sintaxe: `>>st comando argumentos`")
+                await ctx.send("Comando inválido. Sintaxe: `>>st comando argumentos`\nPara uma lista de comandos, use `>>help st`.")
 
     @student.command(name='cadastrar')
     async def add_student(self, ctx: commands.Context, *, arguments: str):

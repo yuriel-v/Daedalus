@@ -66,9 +66,9 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
         """
         if ctx.invoked_subcommand is None:
             if not arguments:
-                await ctx.send("Sintaxe: `>>sc comando argumentos`")
+                await ctx.send("Sintaxe: `>>sc comando argumentos`\nPara uma lista de comandos, use `>>help sc`.")
             else:
-                await ctx.send("Comando inválido. Sintaxe: `>>sc comando argumentos`")
+                await ctx.send("Comando inválido. Sintaxe: `>>sc comando argumentos`\nPara uma lista de comandos, use `>>help sc`.")
 
     @scheduler.command(name='matricular')
     async def enroll(self, ctx: commands.Context, *, arguments: str):

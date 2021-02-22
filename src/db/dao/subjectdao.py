@@ -9,7 +9,7 @@ class SubjectDao(GenericDao):
     def __init__(self, session=None, autoinit=True):
         super().__init__(session=session, autoinit=autoinit)
 
-    def insert(self, code: str, fullname: str, semester: int) -> int:
+    def insert(self, code: str, fullname: str, semester: int) -> dict:
         """
         Cadastra uma matéria nova no banco de dados.
         ### Params
@@ -19,10 +19,11 @@ class SubjectDao(GenericDao):
           - Matérias eletivas são de semestre 0.
 
         ### Retorno
-        - `0`: Operação bem-sucedida;
-        - `1`: Exceção lançada, transação sofreu rollback;
-        - `2`: Erro de sintaxe nos argumentos passados;
-        - `3`: O código especificado já existe.
+        - Um dict no formato `{sbj.code: sbj}` em caso de sucesso.
+        - Casos excepcionais:
+            - `{'err': 1}`: Exceção lançada, transação sofreu rollback;
+            - `{'err': 2}`: Erro de sintaxe nos argumentos passados;
+            - `{'err': 3}`: O código especificado já existe.
 
         ### Levanta
         - `SyntaxError` nos seguintes casos:
@@ -48,22 +49,23 @@ class SubjectDao(GenericDao):
                 raise SyntaxError("Argument 'semester' is not an int nor can it be converted to int")
 
         if any([len(code) != 3, len(fullname) == 0, semester not in range(0, 11)]):
-            return 2
+            return {'err': 2}
         else:
             tr = None
             try:
-                tr = self.session.begin_nested()
                 if self.find(terms=code.upper(), by='code') is not None:
-                    return 3
+                    return {'err': 3}
                 else:
-                    self.session.add(Subject(code=code.upper(), fullname=fullname, semester=abs(semester)))
+                    tr = self.session.begin_nested()
+                    new_subject = Subject(code=code.upper(), fullname=fullname, semester=abs(semester))
+                    self.session.add(new_subject)
                     tr.commit()
-                    return 0
+                    return {new_subject.code: new_subject}
             except Exception as e:
                 print_exc("Exception caught on SubjectDao.insert:", e)
                 if tr is not None:
                     tr.rollback()
-                return 1
+                return {'err': 1}
 
     def find(self, terms: Union[int, str], by: str, single_result=True) -> Union[list[Subject], Subject, None]:
         """
@@ -206,7 +208,7 @@ class SubjectDao(GenericDao):
             print_exc("Exception caught on SubjectDao.find_all:", e)
             return []
 
-    def update(self, code: Union[str, Subject], newcode=None, fullname=None, semester=None):
+    def update(self, code: Union[str, Subject], newcode=None, fullname=None, semester=None) -> dict:
         """
         Atualiza as informações de uma matéria.
         ### Params
@@ -217,12 +219,13 @@ class SubjectDao(GenericDao):
         - Pelo menos um dos 3 acima não deve ser `None`. A matéria permanecerá inalterada nos atributos que forem `None`.
 
         ### Retorno
-        - `0`: Operação bem-sucedida;
-        - `1`: Exceção lançada, transação sofreu rollback;
-        - `2`: Erro de sintaxe nos argumentos passados:
-          - `newcode` ou `fullname` é uma string vazia;
-          - `semester` não é um `int` dentro do intervalo [0, 11[
-        - `3`: Matéria inexistente.
+        - Um dict no formato `{0: sbj}` em caso de sucesso.
+        - Casos excepcionais:
+            - `{'err': 1}`: Exceção lançada, transação sofreu rollback;
+            - `{'err': 2}`: Erro de sintaxe nos argumentos passados:
+                - `newcode` ou `fullname` é uma string vazia;
+                - `semester` não é um `int` dentro do intervalo [0, 11[
+            - `{'err': 3}`: Matéria inexistente.
 
         ### Levanta
         - `SyntaxError` caso `code` não seja uma instância de `str` nem `Subject`, nem possa ser convertido para `str`.
@@ -238,15 +241,15 @@ class SubjectDao(GenericDao):
                 all([newcode is None, fullname is None, semester is None]),
                 any([len(str(newcode)) != 3, fullname == '', semester is not None and int(semester) not in range(0, 11)])
             ]):
-                return 2
+                return {'err': 2}
         except Exception:
-            return 2
+            return {'err': 2}
 
         tr = None
         try:
             cur_sbj = self.find(code.upper() if isinstance(code, str) else code.id, by='code')
             if cur_sbj is None:
-                return 3
+                return {'err': 3}
             else:
                 tr = self.session.begin_nested()
                 if newcode is not None:
@@ -259,9 +262,9 @@ class SubjectDao(GenericDao):
                     cur_sbj.semester = int(semester)
 
                 tr.commit()
-                return 0
+                return {0: cur_sbj}
         except Exception as e:
             print_exc("Exception caught on SubjectDao.update:", e)
             if tr is not None:
                 tr.rollback()
-            return 1
+            return {'err': 1}
