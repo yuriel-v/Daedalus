@@ -1,4 +1,6 @@
 # Módulo de sei lá o quê. Utilidades em geral. E memes.
+import traceback
+
 from discord.ext import commands
 from discord import Member
 from os import getenv
@@ -8,7 +10,7 @@ from typing import Iterable, Union
 
 daedalus = {
     'token': getenv("DAEDALUS_TOKEN"),
-    'version': '0.523299',
+    'version': '0.571024',
     'environment': getenv("DAEDALUS_ENV").upper()
 }
 debug = bool(daedalus['environment'] == "DEV")
@@ -23,7 +25,7 @@ def ferozes():
 
 def print_exc(msg: str, e: Exception):
     if debug:
-        print(f"{msg}\n{e.with_traceback()}")
+        print(f"{msg}\n{traceback.print_exc()}")
     else:
         print(f"{msg}\n{e}")
 
@@ -54,7 +56,7 @@ def uni_avg(av1: float, aps1: float, av2: float, aps2: float, av3: float):
     return nround(avg(items), 1)
 
 
-def split_args(arguments: str, prefixed=False, islist=True) -> Union[list[str], str]:
+def split_args(arguments='', prefixed=False, islist=True) -> Union[list[str], str]:
     """
     Separa os argumentos passados num comando em uma lista de strings, ou em uma string só, caso `islist = False`.
     - Use `prefixed = True` quando um comando for separado por espaço, ex.: `st cadastrar mtr nome = ['mtr', 'nome']`.
@@ -113,13 +115,13 @@ def smoothen(message: Iterable):
         message = tuple([str(x) for x in message.values()])
         dashes = len(max(message, key=len))
     else:
-        message = str(message)
-        dashes = len(message)
+        message = tuple(str(message).split('\n'))
+        dashes = len(max(message, key=len))
     dashes += 2
 
     formatted_message = f'\n+{"-" * dashes}+\n'
-    if isinstance(message, str):
-        formatted_message += f'| {message} |\n'
+    if len(message) == 1:
+        formatted_message += f'| {message[0]} |\n'
     else:
         for string in message:
             if string == len(string) * '-':

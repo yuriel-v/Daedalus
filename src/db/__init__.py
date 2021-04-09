@@ -11,7 +11,10 @@ engin = create_engine(
 )
 
 if getenv("DAEDALUS_ENV").upper() == "DEV":
-    devengin = create_engine(getenv("DATABASE_URL").split(', ')[1], echo=True, pool_pre_ping=True)
+    try:
+        devengin = create_engine(getenv("DATABASE_URL").split(', ')[1], echo=True, pool_pre_ping=True)
+    except IndexError:
+        devengin = None
 else:
     devengin = None
 

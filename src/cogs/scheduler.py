@@ -59,19 +59,19 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
 
     @commands.group(name='sc')
     @cadastrado()
-    async def scheduler(self, ctx: commands.Context, *, arguments: str):
+    async def scheduler(self, ctx: commands.Context):
         """
         Comando mestre para o cog Schedule Controller.
         - P.S. Somente estudantes cadastrados têm acesso a esse cog!
         """
-        if ctx.invoked_subcommand is None:
-            if not arguments:
-                await ctx.send("Sintaxe: `>>sc comando argumentos`\nPara uma lista de comandos, use `>>help sc`.")
-            else:
-                await ctx.send("Comando inválido. Sintaxe: `>>sc comando argumentos`\nPara uma lista de comandos, use `>>help sc`.")
+        if ctx.subcommand_passed is None:
+            await ctx.send("Sintaxe: `>>sc comando argumentos`\nPara uma lista de comandos, use `>>help sc`.")
+
+        elif ctx.invoked_subcommand is None:
+            await ctx.send("Comando inválido. Sintaxe: `>>sc comando argumentos`\nPara uma lista de comandos, use `>>help sc`.")
 
     @scheduler.command(name='matricular')
-    async def enroll(self, ctx: commands.Context, *, arguments: str):
+    async def enroll(self, ctx: commands.Context, *, arguments=''):
         """
         Matricula um estudante numa matéria.
         - Se essa matéria for uma matéria trancada, ela é reativada.
@@ -102,7 +102,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
                 await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
     @scheduler.command(name='nota')
-    async def update_grade(self, ctx: commands.Context, student: Student, *, arguments: str):
+    async def update_grade(self, ctx: commands.Context, student: Student, *, arguments=''):
         """
         Atualiza a nota de uma matéria em específico.
         - O comando rejeita trabalhos pendentes - somente trabalhos com status `OK` são alterados!
@@ -165,7 +165,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
                 await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
     @scheduler.command(name='status')
-    async def update_status(self, ctx: commands.Context, student: Student, *, arguments: str):
+    async def update_status(self, ctx: commands.Context, *, arguments=''):
         """
         Altera o status de um trabalho. Também reconhecido como o comando `sts`.
         - Sintaxe: `sc status codigo_materia trabalho novostatus`; onde `novostatus` pode ser:
@@ -191,7 +191,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
                 await msg.edit(content=invalid_syntax)
                 return
             else:
-                assignment = exam_types.index(assignment)
+                assignment = exam_types.index(assignment) + 1
 
             if status not in statuses:
                 await msg.edit(content=invalid_syntax)
@@ -205,6 +205,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
                 status = statuses.index(status) + 1
 
             try:
+                print(f'Calling scdao.update with arguments: {ctx.author.id}, {sbj_code}, {assignment}, {status}, False')
                 result = self.scdao.update(
                     student=ctx.author.id,
                     subject=sbj_code,
@@ -221,15 +222,15 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
                 if 'err' in result.keys():
                     await msg.edit(content=err_responses[result.get('err') - 1])
                 else:
-                    msg = f"Status alterado: ```{smoothen(f'{tuple(result.keys())[0]} | {assignment}: {status}')}```"
-                    await msg.edit(content=msg)
+                    newmsg = f"Status alterado: ```{smoothen(f'{tuple(result.keys())[0]} | {exam_types[assignment - 1]}: {statuses[status - 1]}')}```"
+                    await msg.edit(content=newmsg)
 
             except Exception as e:
                 print_exc('Exception caught at updating status:', e)
                 await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
     @scheduler.command(name='trancar')
-    async def lock_enrollment(self, ctx: commands.Context, student: Student, *, arguments: str):
+    async def lock_enrollment(self, ctx: commands.Context, student: Student, *, arguments=''):
         """
         Tranca uma, várias ou todas as matérias matriculadas pelo estudante que chamar o comando.
         - Sintaxe: `sc trancar mt1 mt2 ...`

@@ -54,7 +54,7 @@ class SchedulerDao(GenericDao):
             student = self.session.query(Student).filter(Student.discord_id == (student if isinstance(student, int) else student.id)).first()
             if student is None or len(subjects) == 0:
                 return {'err': 2}
-            
+
             tr = self.session.begin_nested()
             modified_subjects = dict({})
             try:
@@ -191,7 +191,7 @@ class SchedulerDao(GenericDao):
             if isinstance(student, int):
                 student = self.session.query(Student).filter(Student.discord_id == student).first()
             if isinstance(subject, str):
-                subject = self.session.query(Subject).filter(Subject.code == subject.upper())
+                subject = self.session.query(Subject).filter(Subject.code == subject.upper()).first()
 
             q: Query = self.session.query(Exam).join(Registered, Registered.id == Exam.id)
             q = q.filter(Registered.std_id == student.id, Registered.sbj_id == subject.id, Exam.exam_type == exam_type)
@@ -262,38 +262,43 @@ class SchedulerDao(GenericDao):
             if isinstance(student, int):
                 student = self.session.query(Student).filter(Student.discord_id == student).first()
             if isinstance(subject, str):
-                subject = self.session.query(Subject).filter(Subject.code == subject.upper())
+                subject = self.session.query(Subject).filter(Subject.code == subject.upper()).first()
 
-            exam = self.find_exam(
-                student=student,
-                subject=subject,
-                exam_type=exam_type, current=current,
-                active=active
-            )
+            try:
+                exam = self.find_exam(
+                    student=student,
+                    subject=subject,
+                    exam_type=exam_type, current=current,
+                    active=active
+                )
+            except Exception as e:
+                print(f'Caught at fetching exam: {e}')
+                raise e
+
             if exam is None:
-                return 3
+                return {'err': 3}
             else:
                 if grade:
                     if int(exam.status) != 1:
                         tr.rollback()
-                        return 4
+                        return {'err': 4}
                     else:
                         exam.grade = nround(newval, 1)
                 else:
                     if isinstance(newval, str):
-                        exam.status = ('OK', 'EPN', 'PND').index(newval) + 1
+                        exam.status = ('OK', 'EPN', 'PND').index(newval - 1)
                     elif isinstance(newval, int):
-                        exam.status = ('OK', 'EPN', 'PND')[newval + 1]
+                        exam.status = newval
                     else:
                         tr.rollback()
-                        return 2
+                        return {'err': 2}
                 tr.commit()
-                return 0
+                return {subject.fullname: 0}
         except Exception as e:
-            print(f"Exception caught at update grade: {e}")
+            print(f"Exception caught at SchedulerDao.update(): {e}")
             if tr is not None:
                 tr.rollback()
-            return 1
+            return {'err': 1}
 
     def lock(self, student: Union[Student, int], subjects: Union[list[str], tuple[str], set[str]], lock_all: bool = False) -> dict:
         """

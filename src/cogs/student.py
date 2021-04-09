@@ -24,18 +24,18 @@ class StudentController(commands.Cog, name='Student Controller: st'):
         }
 
     @commands.group(name='st')
-    async def student(self, ctx: commands.Context, *, arguments: str):
+    async def student(self, ctx: commands.Context):
         """
         Comando mestre para o cog Student Controller.
         """
-        if ctx.invoked_subcommand is None:
-            if not arguments:
-                await ctx.send("Sintaxe: `>>st comando argumentos`\nPara uma lista de comandos, use `>>help st`.")
-            else:
-                await ctx.send("Comando inválido. Sintaxe: `>>st comando argumentos`\nPara uma lista de comandos, use `>>help st`.")
+        if ctx.subcommand_passed is None:
+            await ctx.send("Sintaxe: `>>st comando argumentos`\nPara uma lista de comandos, use `>>help st`.")
+
+        elif ctx.invoked_subcommand is None:
+            await ctx.send("Comando inválido. Sintaxe: `>>st comando argumentos`\nPara uma lista de comandos, use `>>help st`.")
 
     @student.command(name='cadastrar')
-    async def add_student(self, ctx: commands.Context, *, arguments: str):
+    async def add_student(self, ctx: commands.Context, *, arguments=''):
         """
         Cadastra o usuário que invocou o comando.
         - O sistema não permite o cadastro de um usuário já cadastrado.
@@ -65,7 +65,7 @@ class StudentController(commands.Cog, name='Student Controller: st'):
             await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
     @student.command(name='buscar')
-    async def check_student(self, ctx: commands.Context, *, arguments: str):
+    async def check_student(self, ctx: commands.Context, *, arguments=''):
         """
         Busca os dados de um estudante.
         - O 'filtro' pode ser uma matrícula (numérica) ou um nome (string).
@@ -109,7 +109,7 @@ class StudentController(commands.Cog, name='Student Controller: st'):
             await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
     @student.command(name='existe')
-    async def student_exists(self, ctx: commands.Context, *, arguments: str):
+    async def student_exists(self, ctx: commands.Context, *, arguments=''):
         """
         Verifica se um ID Discord existe no banco de dados ou não.
         - Sintaxe: `existe numeroid`
@@ -127,7 +127,7 @@ class StudentController(commands.Cog, name='Student Controller: st'):
             await msg.edit(content="ID não existente.")
 
     @student.command(name='ver')
-    async def view_self(self, ctx: commands.Context, *, arguments: str):
+    async def view_self(self, ctx: commands.Context, *, arguments=''):
         """
         Verifica se a pessoa que invocou o comando está cadastrada no banco de dados.
         - Se sim, então os dados da pessoa são mostrados, juntamente com suas provas e respectivos status.
@@ -207,7 +207,7 @@ class StudentController(commands.Cog, name='Student Controller: st'):
                 dprint(f"------------------ Time taken: {end} sec ------------------")
 
     @student.command(name='editar')
-    async def edit_student(self, ctx: commands.Context, *, arguments: str):
+    async def edit_student(self, ctx: commands.Context, *, arguments=''):
         """
         Edita o cadastro do usuário que invocou o comando.
         - Sintaxe: `editar campo novo valor`, onde campo pode ser:

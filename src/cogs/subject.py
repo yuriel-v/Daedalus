@@ -24,26 +24,21 @@ class SubjectController(commands.Cog, name='Subject Controller: mt'):
         else:
             print_exc("(SubjectController) Exception raised:", error)
 
-    def ferozes():
-        async def predicate(ctx: commands.Context):
-            return ctx.guild.id == 567817989806882818
-        return commands.check(predicate)
-
     @commands.group('mt')
-    async def subject(self, ctx: commands.Context, *, arguments: str):
+    async def subject(self, ctx: commands.Context):
         """
         Comando mestre para o cog Subject Controller.
         - P.S. Usuários que não forem o proprietário do bot só podem visualizar matérias (read-only).
         """
-        if ctx.invoked_subcommand is None:
-            if not arguments:
-                await ctx.send("Sintaxe: `>>mt comando argumentos`")
-            else:
-                await ctx.send("Comando inválido. Sintaxe: `>>mt comando argumentos`\nPara uma lista de comandos, use `>>help mt`.")
+        if ctx.subcommand_passed is None:
+            await ctx.send("Sintaxe: `>>mt comando argumentos`")
+
+        elif ctx.invoked_subcommand is None:
+            await ctx.send("Comando inválido. Sintaxe: `>>mt comando argumentos`\nPara uma lista de comandos, use `>>help mt`.")
 
     @subject.command(name='add')
     @commands.is_owner()
-    async def add_subject(self, ctx: commands.Context, *, arguments: str):
+    async def add_subject(self, ctx: commands.Context, *, arguments=''):
         """
         Adiciona uma matéria nova.
         - Sintaxe: `mt add CDE SM Nome da Matéria`, onde:
@@ -75,7 +70,7 @@ class SubjectController(commands.Cog, name='Subject Controller: mt'):
                 await msg.edit(content="Algo deu errado. Consulte o log para detalhes.")
 
     @subject.command(name='buscar')
-    async def find_subject(self, ctx: commands.Context, *, arguments: str):
+    async def find_subject(self, ctx: commands.Context, *, arguments=''):
         """
         Procura uma matéria existente.
         - Sintaxe: `mt buscar <por> <filtro>`, onde:
@@ -123,7 +118,7 @@ class SubjectController(commands.Cog, name='Subject Controller: mt'):
 
     @subject.command(name='editar')
     @commands.is_owner()
-    async def edit_subject(self, ctx: commands.Context, *, arguments: str):
+    async def edit_subject(self, ctx: commands.Context, *, arguments=''):
         """
         Edita uma matéria em específico.
         - Sintaxe: `mt editar <campo> <código> <novo valor>`, onde:

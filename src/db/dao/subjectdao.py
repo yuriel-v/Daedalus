@@ -111,7 +111,7 @@ class SubjectDao(GenericDao):
             if by == 'code':
                 q = q.filter(Subject.code == terms.upper())
             elif by == 'name':
-                q = q.filter(Subject.fullname.ilike(terms))
+                q = q.filter(Subject.fullname.ilike(f'%{terms}%'))
             else:
                 q = q.filter(Subject.semester == terms)
 

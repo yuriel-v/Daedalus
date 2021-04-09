@@ -35,7 +35,7 @@ bot = commands.Bot(
     help_command=None
 )
 initialize_sql(engin)
-if daedalus['environment'] == "DEV":
+if daedalus['environment'] == "DEV" and devengin is not None:
     initialize_sql(devengin)
 
 # Cogs
@@ -64,14 +64,14 @@ async def ready():
 
 
 def list_cogs(guild_id: int = None):
-    if guild_id is None:
-        coglist = (f'- {x}' for x in bot.cogs.keys())
-    else:
-        coglist = (
-            f'- {cogname}' for cogname, cog in bot.cogs.items()
-            if 'ferozes' not in dir(cog) or ('ferozes' in dir(cog) and guild_id == ferozes)
-        )
-    return '\n'.join(coglist)
+    # if guild_id is None:
+    #     coglist = (f'- {x}' for x in bot.cogs.keys())
+    # else:
+    #     coglist = (
+    #         f'- {cogname}' for cogname, cog in bot.cogs.items()
+    #         if 'ferozes' not in dir(cog) or ('ferozes' in dir(cog) and guild_id == ferozes)
+    #     )
+    return '\n'.join(f'- {cogname}' for cogname in bot.cogs.keys())
 
 
 # doesn't work as intended, simply detatches and reattaches cogs
@@ -94,8 +94,7 @@ async def reload_cogs(ctx: commands.Context):
 
 @bot.command('version')
 async def show_version(ctx: commands.Context):
-    string = str(init + init2 % (list_cogs(ctx.guild.id))).split('\n')[2:-1:]
-    await ctx.send("```" + smoothen(string) + "```")
+    await ctx.send("```" + smoothen(str(init + init2 % (list_cogs())).replace('=', '').strip()) + "```")
 
 
 @bot.command()
@@ -105,7 +104,7 @@ async def hello(ctx: commands.Context):
 
 
 @bot.command()
-async def argcount(ctx: commands.Context, *, arguments: str):
+async def argcount(ctx: commands.Context, *, arguments=''):
     arguments = arguments.split()
     await ctx.send(f"Arguments passed: {len(arguments)}\nArguments themselves: `{arguments}`\nArgument classes: {arg_types(arguments, repr=True)}")
 
