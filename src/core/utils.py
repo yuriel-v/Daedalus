@@ -1,6 +1,10 @@
 # Módulo de sei lá o quê. Utilidades em geral. E memes.
 import traceback
+# import threading
 
+from asyncio import sleep
+from datetime import datetime
+from db import DBSession
 from discord.ext import commands
 from discord import Member
 from os import getenv
@@ -10,11 +14,22 @@ from typing import Iterable, Union
 
 daedalus = {
     'token': getenv("DAEDALUS_TOKEN"),
-    'version': '0.571024',
+    'version': '0.571204',
     'environment': getenv("DAEDALUS_ENV").upper()
 }
 debug = bool(daedalus['environment'] == "DEV")
 yaml = YAML(typ='safe')
+
+
+async def half_hourly_commit():
+    """Faz um commit sempre que o minuto da hora atual for 30."""
+    # threading.Timer(60, half_hourly_commit).start()
+
+    while True:
+        if datetime.now().minute == 30 and DBSession.dirty:
+            print("Performing half-hourly SQL flush on dirty session.")
+            DBSession.flush()
+        await sleep(60)
 
 
 def ferozes():

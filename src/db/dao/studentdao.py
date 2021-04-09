@@ -96,7 +96,7 @@ class StudentDao(GenericDao):
             elif by == 'registry':
                 q = q.filter(int(terms) == Student.registry)
             else:
-                q = q.filter(Student.name.ilike(str(terms)))
+                q = q.filter(Student.name.ilike(f'%{str(terms)}%'))
 
             if by == 'name':
                 return q.all()

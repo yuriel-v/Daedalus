@@ -249,13 +249,13 @@ class StudentController(commands.Cog, name='Student Controller: st'):
             print_exc(f'Exception caught at editing self:', e)
 
     @student.command(name='excluir')
-    async def delete_student(self, ctx: commands.Context, *, confirm: str):
+    async def delete_student(self, ctx: commands.Context, *, confirm=''):
         """
         Exclui o estudante que chamou o comando.
         - Uma confirmação deve ser dada para o comando efetivar a exclusão, sendo esta dada pela afirmação `tenho cerveja` após o comando em si.
         """
 
-        if confirm and confirm.lower() != 'tenho cerveja':
+        if not confirm or confirm.lower() != 'tenho cerveja':
             tem_cerveja = "Você tem cerveja disso? Isso irá apagar todas as suas matrículas e dados associados a elas!\n"
             tem_cerveja += "Se realmente tem cerveja disso, então use `st excluir tenho cerveja`. Não diga que não avisei!"
             await ctx.send(tem_cerveja)
