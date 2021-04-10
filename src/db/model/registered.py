@@ -1,6 +1,5 @@
 # Arquivo de mapeamento objeto-relacional para matrículas (estudantes matriculados em tal matéria).
 
-from datetime import date
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, Date, Boolean, ForeignKey, UniqueConstraint, Sequence
 from db.model.student import Student

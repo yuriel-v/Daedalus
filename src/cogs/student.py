@@ -1,4 +1,5 @@
 # Módulo de controle de estudantes.
+from cogs.dbc import DaedalusBaseCog
 from core.utils import print_exc, smoothen, uni_avg, avg, nround, dprint
 from db.dao import SchedulerDao, StudentDao
 from db.model import Student
@@ -7,7 +8,7 @@ from discord.ext import commands
 from time import time
 
 
-class StudentController(commands.Cog, name='Student Controller: st'):
+class StudentController(DaedalusBaseCog, name='Student Controller: st'):
     def __init__(self, bot):
         self.bot = bot
         self.stdao = StudentDao()
@@ -21,6 +22,16 @@ class StudentController(commands.Cog, name='Student Controller: st'):
             'editar': self.edit_student,
             'excluir': self.delete_student
         }
+
+        nl = '\n'
+        self._prefix = 'st'
+        self._help_info = f"""
+        st: Student Controller
+        Este módulo gerencia cadastros gerais de estudantes.\n
+        Comandos incluem:
+        {nl.join([f'- {x}' for x in self.cmds.keys()])}
+        """
+        self._help_info = '\n'.join([x.strip() for x in self._help_info.split('\n')]).strip()
 
     @commands.group(name='st')
     async def student(self, ctx: commands.Context):
@@ -265,17 +276,3 @@ class StudentController(commands.Cog, name='Student Controller: st'):
                 await ctx.send("O seu cadastro foi excluído com sucesso.")
             else:
                 await ctx.send("Algo deu errado. Consulte o log para detalhes.")
-
-    def cog_info(self, command=None) -> str:
-        if command is not None and str(command).lower() in self.cmds.keys():
-            reply = f'-- st {str(command).lower()} --\n' + self.cmds[str(command)].__doc__
-        else:
-            nl = '\n'
-            reply = f"""
-            st: Student Controller
-            Este módulo gerencia cadastros gerais de estudantes.\n
-            Comandos incluem:
-            {nl.join([f'- {x}' for x in self.cmds.keys()])}
-            """
-
-        return '\n'.join([x.strip() for x in reply.split('\n')]).strip()

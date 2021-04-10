@@ -1,6 +1,6 @@
 from core.utils import print_exc
 from db.dao.genericdao import GenericDao
-from db.model import Student, Registered
+from db.model import Student
 from sqlalchemy.orm import Query
 from typing import Union
 

@@ -1,12 +1,13 @@
 # Módulo de controle de matérias.
 # Nota: Somente o proprietário do bot pode invocar alguns desses comandos!
+from cogs.dbc import DaedalusBaseCog
 from core.utils import smoothen, print_exc
 from db.dao import SubjectDao
 from discord.message import Message
 from discord.ext import commands
 
 
-class SubjectController(commands.Cog, name='Subject Controller: mt'):
+class SubjectController(DaedalusBaseCog, name='Subject Controller: mt'):
     def __init__(self, bot):
         self.bot = bot
         self.read_only_cmds = ('buscar', 'todas')
@@ -17,6 +18,17 @@ class SubjectController(commands.Cog, name='Subject Controller: mt'):
             'buscar': self.find_subject,
             'editar': self.edit_subject
         }
+
+        nl = '\n'
+        self._prefix = 'mt'
+        self._help_info = f"""
+        mt: Subject Controller
+        Este módulo gerencia cadastros de matérias.
+        Usuários comuns (não-proprietários) só podem usar comandos de busca (leitura em geral).\n
+        Comandos incluem:
+        {nl.join([f'- {x}' for x in self.cmds.keys()])}
+        """
+        self._help_info = '\n'.join([x.strip() for x in self._help_info.split('\n')]).strip()
 
     async def cog_command_error(self, ctx: commands.Context, error):
         if isinstance(error, commands.NotOwner):
@@ -176,18 +188,3 @@ class SubjectController(commands.Cog, name='Subject Controller: mt'):
             except Exception:
                 print_exc()
                 await msg.edit(content="Algo deu errado. Consulte o log para detalhes.")
-
-    def cog_info(self, command=None) -> str:
-        if command is not None and str(command).lower() in self.cmds.keys():
-            reply = f'-- mt {str(command).lower()} --\n' + self.cmds[str(command)].__doc__
-        else:
-            nl = '\n'
-            reply = f"""
-            mt: Subject Controller
-            Este módulo gerencia cadastros de matérias.
-            Usuários comuns (não-proprietários) só podem usar comandos de busca (leitura em geral).\n
-            Comandos incluem:
-            {nl.join([f'- {x}' for x in self.cmds.keys()])}
-            """
-
-        return '\n'.join([x.strip() for x in reply.split('\n')]).strip()

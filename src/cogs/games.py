@@ -2,6 +2,7 @@
 import requests
 
 from asyncio.tasks import sleep
+from cogs.dbc import DaedalusBaseCog
 from core.utils import yaml, dprint, print_exc
 from discord.colour import Colour
 from discord.embeds import Embed
@@ -10,8 +11,9 @@ from discord.ext.commands.cooldowns import BucketType
 from random import randint
 
 
-class Games(commands.Cog, name='Games'):
+class Games(DaedalusBaseCog, name='Games'):
     def __init__(self, bot):
+        nl = '\n'
         self.bot = bot
         self.cmds = {
             '8ball': self.eight_ball,
@@ -21,6 +23,14 @@ class Games(commands.Cog, name='Games'):
         }
         with open('./src/resources/games.yml', encoding='utf-8') as file:
             self.eightball_replies = yaml.load(file)['eightball_replies']
+
+        self._help_info = f"""
+        Games
+        Esse módulo contém joguinhos (espero que) inofensivos.\n
+        Comandos incluem:
+        {nl.join([f'- {x}' for x in self.cmds.keys()])}
+        """
+        self._help_info = '\n'.join([x.strip() for x in self._help_info.split('\n')]).strip()
 
     async def cog_command_error(self, ctx: commands.Context, error):
         if isinstance(error, commands.CommandOnCooldown):
@@ -116,20 +126,3 @@ class Games(commands.Cog, name='Games'):
         embed = Embed(description='Meow!', colour=Colour(randint(0x000000, 0xFFFFFF)))
         embed.set_image(url=filename)
         await ctx.send(embed=embed)
-
-    def cog_info(self, command=None) -> str:
-        if command is not None and str(command).lower() in self.cmds.keys():
-            if isinstance(self.cmds[str(command)], commands.Command):
-                reply = self.cmds[str(command)].help
-            else:
-                reply = self.cmds[str(command)].__doc__
-        else:
-            nl = '\n'
-            reply = f"""
-            Games
-            Esse módulo contém joguinhos (espero que) inofensivos.\n
-            Comandos incluem:
-            {nl.join([f'- {x}' for x in self.cmds.keys()])}
-            """
-
-        return '\n'.join([x.strip() for x in reply.split('\n')]).strip()

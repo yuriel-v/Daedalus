@@ -57,4 +57,5 @@ class DaedalusHelp(commands.Cog, name='Daedalus Help'):
                     if str(cmd.name).lower() == arguments[0].lower():
                         msg = cmd.help
                         break
-        await ctx.send('Ajuda: ```md\n%s```' % (msg.replace("'", '"').replace('`', "'")))
+        msg = msg.replace("'", '"').replace('`', "'")
+        await ctx.send(f'Ajuda: ```md\n{msg}```')

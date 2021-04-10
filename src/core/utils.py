@@ -11,7 +11,7 @@ from typing import Iterable, Union
 
 daedalus = {
     'token': getenv("DAEDALUS_TOKEN"),
-    'version': '0.752947',
+    'version': '0.787657',
     'environment': getenv("DAEDALUS_ENV").upper()
 }
 debug = bool(daedalus['environment'] == "DEV")
@@ -188,7 +188,7 @@ class Misc(commands.Cog, name='Misc'):
 
     def cog_info(self, command=None) -> str:
         if command is not None and str(command).lower() in self.cmds.keys():
-            reply = f'-- {str(command).lower()} --\n' + self.cmds[str(command)].__doc__
+            reply = f'-- {str(command).lower()} --\n' + self.cmds[str(command)].help
         else:
             nl = '\n'
             reply = f"""
@@ -197,5 +197,6 @@ class Misc(commands.Cog, name='Misc'):
             Comandos incluem:
             {nl.join([f'- {x}' for x in self.cmds.keys()])}
             """
+            reply = '\n'.join([x.strip() for x in reply.split('\n')]).strip()
 
-        return '\n'.join([x.strip() for x in reply.split('\n')]).strip()
+        return reply

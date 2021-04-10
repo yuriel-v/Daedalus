@@ -1,7 +1,7 @@
 # Controlador para registro de matrículas em matérias e suas atividades.
+from cogs.dbc import DaedalusBaseCog
 from core.utils import print_exc, smoothen, nround
 from db.dao import *
-from db.model import Student
 from discord import Message
 from discord.ext import commands
 registered_students = None
@@ -14,7 +14,7 @@ def refresh_student_registry():
     dao.destroy()
 
 
-class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
+class ScheduleController(DaedalusBaseCog, name='Schedule Controller: sc'):
     def __init__(self, bot):
         self.bot = bot
         self.stdao = StudentDao()
@@ -26,6 +26,17 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
             'nota': self.update_grade,
             'status': self.update_status
         }
+
+        nl = '\n'
+        self._prefix = 'sc'
+        self._help_info = f"""
+        sc: Schedule Controller
+        Este módulo foi criado para auxiliar na matrícula e controle de status/notas de provas matriculadas.
+        Somente usuários matriculados pelo módulo 'st' podem utilizar as funções desse módulo!\n
+        Comandos incluem:
+        {nl.join([f'- {x}' for x in self.cmds.keys()])}
+        """
+        self._help_info = '\n'.join([x.strip() for x in self._help_info.split('\n')]).strip()
 
     def cadastrado():
         async def predicate(ctx: commands.Context):
@@ -262,18 +273,3 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
             except Exception:
                 print_exc()
                 await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
-
-    def cog_info(self, command=None) -> str:
-        if command is not None and str(command).lower() in self.cmds.keys():
-            reply = f'-- sc {str(command).lower()} --\n' + self.cmds[str(command)].__doc__
-        else:
-            nl = '\n'
-            reply = f"""
-            sc: Schedule Controller
-            Este módulo foi criado para auxiliar na matrícula e controle de status/notas de provas matriculadas.
-            Somente usuários matriculados pelo módulo 'st' podem utilizar as funções desse módulo!\n
-            Comandos incluem:
-            {nl.join([f'- {x}' for x in self.cmds.keys()])}
-            """
-
-        return '\n'.join([x.strip() for x in reply.split('\n')]).strip()
