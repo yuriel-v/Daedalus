@@ -61,8 +61,8 @@ class SubjectDao(GenericDao):
                     self._session.add(new_subject)
                     self._gcommit(tr)
                     return {new_subject.code: new_subject}
-            except Exception as e:
-                print_exc("Exception caught on SubjectDao.insert:", e)
+            except Exception:
+                print_exc()
                 if tr is not None:
                     tr.rollback()
                 return {'err': 1}
@@ -119,8 +119,8 @@ class SubjectDao(GenericDao):
                 return q.first()
             else:
                 return q.all()
-        except Exception as e:
-            print_exc("Exception caught on SubjectDao.find:", e)
+        except Exception:
+            print_exc()
             return None
 
     def find_many(self, terms: list[str], by: str) -> list[Subject]:
@@ -173,8 +173,8 @@ class SubjectDao(GenericDao):
                 q = q.filter(Subject.semester.in_(terms))
 
             return q.all()
-        except Exception as e:
-            print_exc("Exception caught on SubjectDao.find_many:", e)
+        except Exception:
+            print_exc()
             return []
 
     def find_all(self) -> list[Subject]:
@@ -204,8 +204,8 @@ class SubjectDao(GenericDao):
         # return res
         try:
             return self._session.query(Subject).all()
-        except Exception as e:
-            print_exc("Exception caught on SubjectDao.find_all:", e)
+        except Exception:
+            print_exc()
             return []
 
     def update(self, code: Union[str, Subject], newcode=None, fullname=None, semester=None) -> dict:
@@ -246,8 +246,8 @@ class SubjectDao(GenericDao):
                 ])
             ]):
                 return {'err': 2}
-        except Exception as e:
-            print_exc('Exception raised at SubjectDao.update', e)
+        except Exception:
+            print_exc()
             return {'err': 2}
 
         tr = None
@@ -268,8 +268,8 @@ class SubjectDao(GenericDao):
 
                 self._gcommit(tr)
                 return {0: cur_sbj}
-        except Exception as e:
-            print_exc("Exception caught on SubjectDao.update:", e)
+        except Exception:
+            print_exc()
             if tr is not None:
                 tr.rollback()
             return {'err': 1}

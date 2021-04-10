@@ -2,7 +2,7 @@
 import requests
 
 from asyncio.tasks import sleep
-from core.utils import yaml, dprint
+from core.utils import yaml, dprint, print_exc
 from discord.colour import Colour
 from discord.embeds import Embed
 from discord.ext import commands
@@ -26,7 +26,7 @@ class Games(commands.Cog, name='Games'):
         if isinstance(error, commands.CommandOnCooldown):
             await ctx.send("Calma, rapaz. Sem spam.")
         else:
-            print(f"Exception raised: {error}")
+            print_exc()
 
     # Bola 8 mágica
     @commands.command(name='8ball')
@@ -88,12 +88,12 @@ class Games(commands.Cog, name='Games'):
                     if 'unknown member' in str(e).lower():
                         await ctx.send(f"Parece que {ctx.author.name} morreu de vez...")
                     else:
-                        print(f"Exception raised: {e}")
+                        print_exc()
             except Exception as e:
                 if 'missing permisisons' in str(e).lower():
                     await ctx.send(f"A arma atirou, mas parece que {ctx.author.name} é imortal...")
                 else:
-                    print(f"Exception raised: {e}")
+                    print_exc()
 
         else:
             await ctx.send(u'<:ikillu:700684891251277904> \U0001F389')
@@ -124,7 +124,6 @@ class Games(commands.Cog, name='Games'):
             else:
                 reply = self.cmds[str(command)].__doc__
         else:
-            print('Proc outer else')
             nl = '\n'
             reply = f"""
             Games

@@ -1,10 +1,7 @@
 # Módulo de sei lá o quê. Utilidades em geral. E memes.
 import traceback
-# import threading
+import inspect
 
-from asyncio import sleep
-from datetime import datetime
-from db import DBSession
 from discord.ext import commands
 from discord import Member
 from os import getenv
@@ -14,7 +11,7 @@ from typing import Iterable, Union
 
 daedalus = {
     'token': getenv("DAEDALUS_TOKEN"),
-    'version': '0.674359',
+    'version': '0.752947',
     'environment': getenv("DAEDALUS_ENV").upper()
 }
 debug = bool(daedalus['environment'] == "DEV")
@@ -27,11 +24,11 @@ def ferozes():
     return commands.check(predicate)
 
 
-def print_exc(msg: str, e: Exception):
-    if debug:
-        print(f"{msg}\n{traceback.print_exc()}")
-    else:
-        print(f"{msg}\n{e}")
+def print_exc(msg=''):
+    if not msg:
+        msg = f'Exception caught at {inspect.stack()[1][0].f_locals["self"].__class__.__name__}.{inspect.stack()[1][0].f_code.co_name}():'
+    print(f"{msg}")
+    traceback.print_exc()
 
 
 def nround(number: float, decimals=1):

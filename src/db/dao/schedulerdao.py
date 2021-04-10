@@ -82,19 +82,18 @@ class SchedulerDao(GenericDao):
                 registry = Registered(semester=self.cur_semester, active=True)
                 registry.subject = subj
                 registry.student = student
-                student.registered_on.append(registry)
                 for x in range(1, 6):
                     exam = Exam(exam_type=x, status=3, grade=0.0)
                     exam.registry = registry
                     registry.exams.append(exam)
-                    self._session.add(exam)
-                self._session.add(registry)
+                student.registered_on.append(registry)
                 modified_subjects[subj.code] = subj.fullname
 
             self._gcommit(tr)
+            self._session.expire_all()
             return modified_subjects
-        except Exception as e:
-            print_exc(f"Exception caught at registering students: {e}")
+        except Exception:
+            print_exc()
             if tr is not None:
                 tr.rollback()
             return {'err': 1}
@@ -130,7 +129,7 @@ class SchedulerDao(GenericDao):
                 q = q.filter(Registered.semester == self.cur_semester)
             return q.all()
         except Exception as e:
-            print(f"Exception caught at finding enrollments: {e}")
+            print_exc()
             return []
 
     def find_exam(self, student: Union[Student, int], subject: Union[Subject, str], exam_type: int, current=True, active=True) -> Union[Exam, None]:
@@ -192,8 +191,8 @@ class SchedulerDao(GenericDao):
             if active:
                 q = q.filter(Registered.active == 'true')
             return q.first()
-        except Exception as e:
-            print_exc('Exception caught at SchedulerDao.find_exam:', e)
+        except Exception:
+            print_exc()
             return None
 
     def update(self, student: Union[Student, int], subject: Union[Subject, str], exam_type: int, newval, grade: bool, current=True, active=True) -> dict:
@@ -256,16 +255,12 @@ class SchedulerDao(GenericDao):
             if isinstance(subject, str):
                 subject = self._session.query(Subject).filter(Subject.code == subject.upper()).first()
 
-            try:
-                exam = self.find_exam(
-                    student=student,
-                    subject=subject,
-                    exam_type=exam_type, current=current,
-                    active=active
-                )
-            except Exception as e:
-                print(f'Caught at fetching exam: {e}')
-                raise e
+            exam = self.find_exam(
+                student=student,
+                subject=subject,
+                exam_type=exam_type, current=current,
+                active=active
+            )
 
             if exam is None:
                 return {'err': 3}
@@ -286,8 +281,8 @@ class SchedulerDao(GenericDao):
                         return {'err': 2}
                 self._gcommit(tr)
                 return {subject.fullname: 0}
-        except Exception as e:
-            print(f"Exception caught at SchedulerDao.update(): {e}")
+        except Exception:
+            print_exc()
             if tr is not None:
                 tr.rollback()
             return {'err': 1}
@@ -331,18 +326,26 @@ class SchedulerDao(GenericDao):
 
         tr = None
         try:
+            print(f'Calling scdao.lock with student {student} | subjects {subjects}')
             tr = self._session.begin_nested()
             changed = False
+            if isinstance(student, int):
+                student = self._session.query(Student).filter(Student.discord_id == student).first()
+
             eager_enrollments = self.find_enrollments(student.id)
+            modified_enrollments = []
+
             for reg in eager_enrollments:
+                print(f"Current registry's subject code: {reg.subject.code}")
                 if lock_all or reg.subject.code in subjects:
                     changed = True
                     reg.active = False
+                    modified_enrollments.append(reg.subject.fullname)
 
             self._gcommit(tr)
-            return {0: [reg.subject.fullname for reg in eager_enrollments]} if changed else {'err': 2}
-        except Exception as e:
-            print(f"Exception caught at locking enrollments: {e}")
+            return {0: modified_enrollments} if changed else {'err': 2}
+        except Exception:
+            print_exc()
             if tr is not None:
                 tr.rollback()
             return {'err': 1}

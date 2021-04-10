@@ -17,7 +17,7 @@ class GenericDao(ABC):
         self._session.expire_on_commit = False
 
     def destroy(self):
-        self._session.remove()
+        self._session.close()
         self._session = None
 
     def create(self, session=None):

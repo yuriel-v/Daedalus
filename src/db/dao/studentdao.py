@@ -1,6 +1,6 @@
 from core.utils import print_exc
 from db.dao.genericdao import GenericDao
-from db.model.student import Student
+from db.model import Student, Registered
 from sqlalchemy.orm import Query
 from typing import Union
 
@@ -42,8 +42,8 @@ class StudentDao(GenericDao):
             #    no name      or first name only or                   registry not in 20xxxxxxxx format
             if len(name) == 0 or ' ' not in name or (len(str(registry)) != 10 and not str(registry).startswith('20')):
                 return {'err': 2}
-        except Exception as e:
-            print_exc(f"Exception caught on StudentDao.insert:", e)
+        except Exception:
+            print_exc()
             return {'err': 1}
 
         if self.find(discord_id, by='id') is not None:
@@ -56,8 +56,8 @@ class StudentDao(GenericDao):
                 self._session.add(new_student)
                 self._gcommit(tr)
                 return {new_student.discord_id: new_student}
-            except Exception as e:
-                print_exc(f"Exception caught on StudentDao.insert:", e)
+            except Exception:
+                print_exc()
                 if tr is not None:
                     tr.rollback()
                 return {'err': 1}
@@ -158,8 +158,8 @@ class StudentDao(GenericDao):
 
             self._gcommit(tr)
             return {cur_student.discord_id: cur_student}
-        except Exception as e:
-            print_exc("Exception caught on StudentDao.update:", e)
+        except Exception:
+            print_exc()
             if tr is not None:
                 tr.rollback()
             return {'err': 1}
@@ -186,12 +186,13 @@ class StudentDao(GenericDao):
         tr = None
         try:
             tr = self._session.begin_nested()
-            d = self._session.query(Student).filter(Student.discord_id == discord_id)
-            d.delete(synchronize_session=False)
+            deleted_student = self._session.query(Student).filter(Student.discord_id == discord_id).first()
+            self._session.delete(deleted_student)
+
             self._gcommit(tr)
             return 0
-        except Exception as e:
-            print_exc("Exception caught on StudentDao.delete:", e)
+        except Exception:
+            print_exc()
             if tr is not None:
                 tr.rollback()
             return 1

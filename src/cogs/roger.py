@@ -2,7 +2,7 @@
 import requests
 
 from asyncio.tasks import sleep
-from core.utils import yaml
+from core.utils import yaml, print_exc
 from discord import Message
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
@@ -51,7 +51,7 @@ class RogerDotNet(commands.Cog, name='Roger'):
 
         except Exception as e:
             await msg.edit("Ih, deu zica.")
-            print(f"Zica thrown: {e}")
+            print_exc("Zica thrown:")
 
     def _fetch_roger_image(self):
         endpoint = "https://api.imgur.com/3/album/xv4Jn5D/images"

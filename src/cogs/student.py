@@ -59,8 +59,8 @@ class StudentController(commands.Cog, name='Student Controller: st'):
             else:
                 await msg.edit(content=f'Cadastro realizado com sucesso. ```{smoothen(str(result.get(ctx.author.id)))}```')
 
-        except Exception as e:
-            print_exc(f'(StudentController) Exception caught at searching student:', e)
+        except Exception:
+            print_exc()
             await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
     @student.command(name='buscar')
@@ -103,8 +103,8 @@ class StudentController(commands.Cog, name='Student Controller: st'):
                 else:
                     results = "Encontrado(s):"
                 await msg.edit(content=f"{results}```{smoothen(q)}```")
-        except Exception as e:
-            print_exc('(StudentController) Exception caught at searching student:', e)
+        except Exception:
+            print_exc()
             await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
     @student.command(name='existe')
@@ -197,7 +197,7 @@ class StudentController(commands.Cog, name='Student Controller: st'):
                 final_msg = tuple(final_msg)
             except Exception as e:
                 final_msg = 'Algo deu errado. Consulte o log para detalhes.'
-                print_exc('(StudentController) Exception caught at viewing self:', e)
+                print_exc()
             else:
                 final_msg = f"Seus dados: ```{smoothen(final_msg)}```"
             finally:
@@ -245,7 +245,7 @@ class StudentController(commands.Cog, name='Student Controller: st'):
                 await msg.edit(content=f'Dados alterados. ```{smoothen(str(result.get(ctx.author.id)))}```')
         except Exception as e:
             await msg.edit(content='Algo deu errado. Consule o log para detalhes.')
-            print_exc(f'Exception caught at editing self:', e)
+            print_exc()
 
     @student.command(name='excluir')
     async def delete_student(self, ctx: commands.Context, *, confirm=''):

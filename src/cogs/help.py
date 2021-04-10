@@ -1,5 +1,5 @@
 # Módulo de ajuda aos comandos do bot.
-from core.utils import daedalus
+from core.utils import daedalus, print_exc
 from discord.ext import commands
 
 
@@ -46,7 +46,7 @@ class DaedalusHelp(commands.Cog, name='Daedalus Help'):
                     except IndexError:
                         msg = cog.cog_info()
                     except Exception as e:
-                        print(f'Uncaught exception: {e}')
+                        print_exc()
                     finally:
                         break
 

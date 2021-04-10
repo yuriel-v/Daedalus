@@ -22,7 +22,7 @@ class SubjectController(commands.Cog, name='Subject Controller: mt'):
         if isinstance(error, commands.NotOwner):
             await ctx.send("Somente o proprietário do bot pode usar esse comando.")
         else:
-            print_exc("(SubjectController) Exception raised:", error)
+            print_exc()
 
     @commands.group('mt')
     async def subject(self, ctx: commands.Context):
@@ -65,8 +65,8 @@ class SubjectController(commands.Cog, name='Subject Controller: mt'):
                 else:
                     await msg.edit(content=f"Matéria adicionada com sucesso.\n```{tuple(result.values())[0]}```")
 
-            except Exception as e:
-                print_exc("(SubjectController) Exception caught at adding subject:", e)
+            except Exception:
+                print_exc()
                 await msg.edit(content="Algo deu errado. Consulte o log para detalhes.")
 
     @subject.command(name='buscar')
@@ -110,8 +110,8 @@ class SubjectController(commands.Cog, name='Subject Controller: mt'):
                 else:
                     await msg.edit(content=f"Encontrada(s): ```{smoothen(matches)}```")
 
-            except Exception as e:
-                print_exc(f"(SubjectController) Exception caught at finding one subject:", e)
+            except Exception:
+                print_exc()
                 await msg.edit(content="Algo deu errado. Consulte o log para detalhes.")
 
     # find_all functionality implemented by find_subject.
@@ -173,8 +173,8 @@ class SubjectController(commands.Cog, name='Subject Controller: mt'):
                 else:
                     await msg.edit(content=f'Matéria editada: ```{smoothen(str(result.get(0)))}```')
 
-            except Exception as e:
-                print_exc(f"(SubjectController) Exception caught at editing subject:", e)
+            except Exception:
+                print_exc()
                 await msg.edit(content="Algo deu errado. Consulte o log para detalhes.")
 
     def cog_info(self, command=None) -> str:

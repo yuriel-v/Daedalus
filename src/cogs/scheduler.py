@@ -7,15 +7,11 @@ from discord.ext import commands
 registered_students = None
 
 
-def refresh_student_registry(dao: StudentDao, disposable_dao=False):
-    if not dao.active():
-        dao.create()
-
+def refresh_student_registry():
+    dao = StudentDao()
     global registered_students
     registered_students = dao.find_all_ids()
-
-    if disposable_dao:
-        dao.destroy()
+    dao.destroy()
 
 
 class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
@@ -23,7 +19,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
         self.bot = bot
         self.stdao = StudentDao()
         self.scdao = SchedulerDao()
-        refresh_student_registry(self.stdao)
+        refresh_student_registry()
         self.cmds = {
             'matricular': self.enroll,
             'trancar': self.lock_enrollment,
@@ -35,7 +31,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
         async def predicate(ctx: commands.Context):
             global registered_students
             if ctx.author.id not in registered_students:
-                refresh_student_registry(StudentDao(), True)
+                refresh_student_registry()
             return ctx.author.id in registered_students
         return commands.check(predicate)
 
@@ -43,7 +39,7 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
         if isinstance(error, commands.CheckFailure):
             await ctx.send("Você não está cadastrado. Use o comando `>>st cadastrar` para usar os subcomandos de `sc`.")
         else:
-            print_exc(f"Exception raised:", error)
+            print_exc(f"Exception raised:")
 
     async def cog_after_invoke(self, ctx):
         # no, i don't think i will.
@@ -97,12 +93,12 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
                         msg.edit(content="Algo deu errado. Consulte o log para mais detalhes.")
                 else:
                     await msg.edit(content=f"Matrícula registrada nas matérias a seguir:\n```{smoothen(tuple([f'{x}: {y}' for x, y in result.items()]))}```")
-            except Exception as e:
-                print_exc(f'(ScheduleController) Exception caught at enrolling student:', e)
+            except Exception:
+                print_exc()
                 await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
     @scheduler.command(name='nota')
-    async def update_grade(self, ctx: commands.Context, student: Student, *, arguments=''):
+    async def update_grade(self, ctx: commands.Context, *, arguments=''):
         """
         Atualiza a nota de uma matéria em específico.
         - O comando rejeita trabalhos pendentes - somente trabalhos com status `OK` são alterados!
@@ -157,11 +153,11 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
                 if 'err' in result.keys():
                     await msg.edit(content=err_responses[result.get('err') - 1])
                 else:
-                    msg = f"Nota alterada: ```{smoothen(f'{tuple(result.keys())[0]} | {assignment}: {nround(grade, 1)}')}```"
-                    await msg.edit(content=msg)
+                    newmsg = f"Nota alterada: ```{smoothen(f'{tuple(result.keys())[0]} | {assignment}: {nround(grade, 1)}')}```"
+                    await msg.edit(content=newmsg)
 
-            except Exception as e:
-                print_exc('(ScheduleController) Exception caught at updating grade:', e)
+            except Exception:
+                print_exc()
                 await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
     @scheduler.command(name='status')
@@ -205,7 +201,6 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
                 status = statuses.index(status) + 1
 
             try:
-                print(f'Calling scdao.update with arguments: {ctx.author.id}, {sbj_code}, {assignment}, {status}, False')
                 result = self.scdao.update(
                     student=ctx.author.id,
                     subject=sbj_code,
@@ -225,12 +220,12 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
                     newmsg = f"Status alterado: ```{smoothen(f'{tuple(result.keys())[0]} | {exam_types[assignment - 1]}: {statuses[status - 1]}')}```"
                     await msg.edit(content=newmsg)
 
-            except Exception as e:
-                print_exc('Exception caught at updating status:', e)
+            except Exception:
+                print_exc()
                 await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
     @scheduler.command(name='trancar')
-    async def lock_enrollment(self, ctx: commands.Context, student: Student, *, arguments=''):
+    async def lock_enrollment(self, ctx: commands.Context, *, arguments=''):
         """
         Tranca uma, várias ou todas as matérias matriculadas pelo estudante que chamar o comando.
         - Sintaxe: `sc trancar mt1 mt2 ...`
@@ -264,8 +259,8 @@ class ScheduleController(commands.Cog, name='Schedule Controller: sc'):
                         await msg.edit(content=msgs[0])
                 else:
                     await msg.edit(content=msgs[result.get('err')])
-            except Exception as e:
-                print_exc('Exception caught during enrollment locking:', e)
+            except Exception:
+                print_exc()
                 await msg.edit(content='Algo deu errado. Consulte o log para detalhes.')
 
     def cog_info(self, command=None) -> str:
