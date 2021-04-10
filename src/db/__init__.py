@@ -18,7 +18,7 @@ if getenv("DAEDALUS_ENV").upper() == "DEV":
 else:
     devengin = None
 
-DBSession = scoped_session(sessionmaker(bind=engin))
+DBSession = scoped_session(sessionmaker(bind=engin, expire_on_commit=False))
 Base = declarative_base()
 
 

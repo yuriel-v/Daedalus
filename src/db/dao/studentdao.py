@@ -51,10 +51,10 @@ class StudentDao(GenericDao):
         else:
             tr = None
             try:
-                tr = self.session.begin_nested()
+                tr = self._session.begin_nested()
                 new_student = Student(name=name, registry=registry, discord_id=discord_id)
-                self.session.add(new_student)
-                tr.commit()
+                self._session.add(new_student)
+                self._gcommit(tr)
                 return {new_student.discord_id: new_student}
             except Exception as e:
                 print_exc(f"Exception caught on StudentDao.insert:", e)
@@ -90,7 +90,7 @@ class StudentDao(GenericDao):
         if terms is None or terms == '':
             return None
         else:
-            q: Query = self.session.query(Student)
+            q: Query = self._session.query(Student)
             if by == 'id':
                 q = q.filter(int(terms) == Student.discord_id)
             elif by == 'registry':
@@ -107,7 +107,7 @@ class StudentDao(GenericDao):
         """
         Busca todos os estudantes cadastrados no banco de dados.
         """
-        return self.session.query(Student).all()
+        return self._session.query(Student).all()
 
     def find_all_ids(self) -> tuple[int]:
         """
@@ -146,7 +146,7 @@ class StudentDao(GenericDao):
 
         tr = None
         try:
-            tr = self.session.begin_nested()
+            tr = self._session.begin_nested()
             cur_student = self.find(student if isinstance(student, int) else student.id, by='id')
             if cur_student is None:
                 return {'err', 2}
@@ -156,7 +156,7 @@ class StudentDao(GenericDao):
             if registry is not None:
                 cur_student.registry = int(registry)
 
-            tr.commit()
+            self._gcommit(tr)
             return {cur_student.discord_id: cur_student}
         except Exception as e:
             print_exc("Exception caught on StudentDao.update:", e)
@@ -185,10 +185,10 @@ class StudentDao(GenericDao):
 
         tr = None
         try:
-            tr = self.session.begin_nested()
-            d = self.session.query(Student).filter(Student.discord_id == discord_id)
+            tr = self._session.begin_nested()
+            d = self._session.query(Student).filter(Student.discord_id == discord_id)
             d.delete(synchronize_session=False)
-            tr.commit()
+            self._gcommit(tr)
             return 0
         except Exception as e:
             print_exc("Exception caught on StudentDao.delete:", e)

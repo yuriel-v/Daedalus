@@ -56,10 +56,10 @@ class SubjectDao(GenericDao):
                 if self.find(terms=code.upper(), by='code') is not None:
                     return {'err': 3}
                 else:
-                    tr = self.session.begin_nested()
+                    tr = self._session.begin_nested()
                     new_subject = Subject(code=code.upper(), fullname=fullname, semester=abs(semester))
-                    self.session.add(new_subject)
-                    tr.commit()
+                    self._session.add(new_subject)
+                    self._gcommit(tr)
                     return {new_subject.code: new_subject}
             except Exception as e:
                 print_exc("Exception caught on SubjectDao.insert:", e)
@@ -107,7 +107,7 @@ class SubjectDao(GenericDao):
                 raise SyntaxError("Argument 'terms' is not an int and cannot be cast to int")
 
         try:
-            q: Query = self.session.query(Subject)
+            q: Query = self._session.query(Subject)
             if by == 'code':
                 q = q.filter(Subject.code == terms.upper())
             elif by == 'name':
@@ -164,7 +164,7 @@ class SubjectDao(GenericDao):
                 raise SyntaxError("At least one argument in 'terms' is not an int and cannot be cast to int")
 
         try:
-            q: Query = self.session.query(Subject)
+            q: Query = self._session.query(Subject)
             if by == 'code':
                 q = q.filter(Subject.code.in_(terms))
             elif by == 'name':
@@ -203,7 +203,7 @@ class SubjectDao(GenericDao):
         #     res.append(Subject(id=row['id'], code=row['code'], fullname=row['fullname'], semester=row['semester']))
         # return res
         try:
-            return self.session.query(Subject).all()
+            return self._session.query(Subject).all()
         except Exception as e:
             print_exc("Exception caught on SubjectDao.find_all:", e)
             return []
@@ -239,10 +239,15 @@ class SubjectDao(GenericDao):
         try:
             if any([
                 all([newcode is None, fullname is None, semester is None]),
-                any([len(str(newcode)) != 3, fullname == '', semester is not None and int(semester) not in range(0, 11)])
+                any([
+                    newcode is not None and len(str(newcode)) != 3,
+                    fullname is not None and len(fullname) < 3,
+                    semester is not None and int(semester) not in range(0, 11)
+                ])
             ]):
                 return {'err': 2}
-        except Exception:
+        except Exception as e:
+            print_exc('Exception raised at SubjectDao.update', e)
             return {'err': 2}
 
         tr = None
@@ -251,7 +256,7 @@ class SubjectDao(GenericDao):
             if cur_sbj is None:
                 return {'err': 3}
             else:
-                tr = self.session.begin_nested()
+                tr = self._session.begin_nested()
                 if newcode is not None:
                     cur_sbj.code = str(newcode).upper()
 
@@ -261,7 +266,7 @@ class SubjectDao(GenericDao):
                 if semester is not None:
                     cur_sbj.semester = int(semester)
 
-                tr.commit()
+                self._gcommit(tr)
                 return {0: cur_sbj}
         except Exception as e:
             print_exc("Exception caught on SubjectDao.update:", e)

@@ -1,5 +1,4 @@
 # Módulo de controle de estudantes.
-from typing import Union
 from core.utils import print_exc, smoothen, uni_avg, avg, nround, dprint
 from db.dao import SchedulerDao, StudentDao
 from db.model import Student
@@ -260,10 +259,12 @@ class StudentController(commands.Cog, name='Student Controller: st'):
             tem_cerveja += "Se realmente tem cerveja disso, então use `st excluir tenho cerveja`. Não diga que não avisei!"
             await ctx.send(tem_cerveja)
 
-        elif self.stdao.delete(ctx.author.id) == 0:
-            await ctx.send("O seu cadastro foi excluído com sucesso.")
         else:
-            await ctx.send("Algo deu errado. Consulte o log para detalhes.")
+            res = self.stdao.delete(ctx.author.id)
+            if res == 0:
+                await ctx.send("O seu cadastro foi excluído com sucesso.")
+            else:
+                await ctx.send("Algo deu errado. Consulte o log para detalhes.")
 
     def cog_info(self, command=None) -> str:
         if command is not None and str(command).lower() in self.cmds.keys():

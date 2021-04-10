@@ -20,8 +20,8 @@ from discord.errors import ConnectionClosed, GatewayNotFound, HTTPException, Log
 from discord.ext import commands
 from discord.flags import Intents
 from sqlalchemy.orm import close_all_sessions
-from db import engin, devengin, DBSession, initialize_sql
-from core.utils import Misc, arg_types, smoothen, print_exc, daedalus, half_hourly_commit
+from db import engin, devengin, initialize_sql
+from core.utils import Misc, arg_types, smoothen, print_exc, daedalus
 
 # Imports de módulos customizados
 from cogs import *
@@ -137,7 +137,6 @@ def main(*args, **kwargs):
                 bot.close()
 
     asyncio.ensure_future(run_bot(), loop=loop)
-    asyncio.ensure_future(half_hourly_commit(), loop=loop)
     try:
         loop.run_forever()
     except GatewayNotFound as e:
@@ -158,6 +157,5 @@ def main(*args, **kwargs):
 if __name__ == "__main__":
     # bot.run(daedalus_token)
     main(daedalus['token'])
-    DBSession.commit()
     close_all_sessions()
     print('Bye')

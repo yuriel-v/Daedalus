@@ -126,10 +126,10 @@ class SubjectController(commands.Cog, name='Subject Controller: mt'):
           - `campo`: Campo a editar (`nome`, `cod`, `sem` ou `todos`);
           - `novo valor`: Novo valor;
           - No caso de `campo == 'todos'`, a ordem dos novos valores é `<código> <semestre> <nome completo>`.
-        - Exemplos: `mt editar AL1 cod ALG`, `mt editar AL1 todos ALG 0 Algoritmos 1`.
+        - Exemplos: `mt editar cod AL1 ALG`, `mt editar todos AL1 ALG 0 Algoritmos 1`.
         """
         arguments: list = arguments.split()
-        syntax_error = "Sintaxe inválida. Exemplos: `mt editar AL1 cod ALG`, `mt editar AL1 todos ALG 0 Algoritmos 1`."
+        syntax_error = "Sintaxe inválida. Exemplos: `mt editar cod AL1 ALG`, `mt editar todos AL1 ALG 0 Algoritmos 1`."
         if len(arguments) < 3 or any([arguments[0].lower() not in ('nome', 'cod', 'sem', 'todos'), len(arguments[1]) != 3]):
             await ctx.send(syntax_error)
         else:

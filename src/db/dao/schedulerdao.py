@@ -51,56 +51,48 @@ class SchedulerDao(GenericDao):
 
         tr = None
         try:
-            student = self.session.query(Student).filter(Student.discord_id == (student if isinstance(student, int) else student.id)).first()
+            student = self._session.query(Student).filter(Student.discord_id == (student if isinstance(student, int) else student.id)).first()
             if student is None or len(subjects) == 0:
                 return {'err': 2}
 
-            tr = self.session.begin_nested()
+            tr = self._session.begin_nested()
             modified_subjects = dict({})
-            try:
-                enrollments = self.find_enrollments(student.id, previous=True, active=False)
-                for reg in enrollments:
-                    if reg.subject.code in subjects:
-                        modified_subjects[reg.subject.code] = reg.subject.fullname
+            enrollments = self.find_enrollments(student.id, previous=True, active=False)
+            for reg in enrollments:
+                if reg.subject.code in subjects:
+                    modified_subjects[reg.subject.code] = reg.subject.fullname
 
-                        while reg.subject.code in subjects:
-                            subjects.remove(reg.subject.code)
+                    while reg.subject.code in subjects:
+                        subjects.remove(reg.subject.code)
 
-                        if not reg.active:  # reactivating a locked subject
-                            reg.active = True
+                    if not reg.active:  # reactivating a locked subject
+                        reg.active = True
 
-                        if reg.semester != self.cur_semester:  # retrying a failed subject
-                            reg.semester = self.cur_semester
-                            for exam in reg.exams:
-                                exam.reset()
-                        # no need to add reg to session here, it already is in the session
-            except Exception as e:
-                print('Caught at checking old subjects')
-                raise e
+                    if reg.semester != self.cur_semester:  # retrying a failed subject
+                        reg.semester = self.cur_semester
+                        for exam in reg.exams:
+                            exam.reset()
+                    # no need to add reg to session here, it already is in the session
 
-            try:
-                loaded_subjects = self.session.query(Subject).filter(Subject.code.in_(subjects)).all()
-                if not loaded_subjects and not modified_subjects:
-                    return {'err': 3}
+            loaded_subjects = self._session.query(Subject).filter(Subject.code.in_(subjects)).all()
+            if not loaded_subjects and not modified_subjects:
+                return {'err': 3}
 
-                for subj in loaded_subjects:
-                    registry = Registered(semester=self.cur_semester, active=True)
-                    registry.subject = subj
-                    registry.student = student
-                    student.registered_on.append(registry)
-                    for x in range(1, 6):
-                        exam = Exam(exam_type=x, status=3, grade=0.0)
-                        exam.registry = registry
-                        registry.exams.append(exam)
-                        self.session.add(exam)
-                    self.session.add(registry)
-                    modified_subjects[subj.code] = subj.fullname
+            for subj in loaded_subjects:
+                registry = Registered(semester=self.cur_semester, active=True)
+                registry.subject = subj
+                registry.student = student
+                student.registered_on.append(registry)
+                for x in range(1, 6):
+                    exam = Exam(exam_type=x, status=3, grade=0.0)
+                    exam.registry = registry
+                    registry.exams.append(exam)
+                    self._session.add(exam)
+                self._session.add(registry)
+                modified_subjects[subj.code] = subj.fullname
 
-                tr.commit()
-                return modified_subjects
-            except Exception as e:
-                print('Caught at adding new subjects')
-                raise e
+            self._gcommit(tr)
+            return modified_subjects
         except Exception as e:
             print_exc(f"Exception caught at registering students: {e}")
             if tr is not None:
@@ -129,7 +121,7 @@ class SchedulerDao(GenericDao):
             except Exception:
                 raise SyntaxError("Student ID is not an instance of 'int' and cannot be cast to 'int'")
         try:
-            q = self.session.query(Registered).filter(Registered.std_id == std_id)
+            q = self._session.query(Registered).filter(Registered.std_id == std_id)
             if active:
                 q = q.filter(Registered.active == 'true')
             if previous:
@@ -189,11 +181,11 @@ class SchedulerDao(GenericDao):
 
         try:
             if isinstance(student, int):
-                student = self.session.query(Student).filter(Student.discord_id == student).first()
+                student = self._session.query(Student).filter(Student.discord_id == student).first()
             if isinstance(subject, str):
-                subject = self.session.query(Subject).filter(Subject.code == subject.upper()).first()
+                subject = self._session.query(Subject).filter(Subject.code == subject.upper()).first()
 
-            q: Query = self.session.query(Exam).join(Registered, Registered.id == Exam.id)
+            q: Query = self._session.query(Exam).join(Registered, Registered.id == Exam.id)
             q = q.filter(Registered.std_id == student.id, Registered.sbj_id == subject.id, Exam.exam_type == exam_type)
             if current:
                 q = q.filter(Registered.semester == self.cur_semester)
@@ -258,11 +250,11 @@ class SchedulerDao(GenericDao):
 
         tr = None
         try:
-            tr = self.session.begin_nested()
+            tr = self._session.begin_nested()
             if isinstance(student, int):
-                student = self.session.query(Student).filter(Student.discord_id == student).first()
+                student = self._session.query(Student).filter(Student.discord_id == student).first()
             if isinstance(subject, str):
-                subject = self.session.query(Subject).filter(Subject.code == subject.upper()).first()
+                subject = self._session.query(Subject).filter(Subject.code == subject.upper()).first()
 
             try:
                 exam = self.find_exam(
@@ -292,7 +284,7 @@ class SchedulerDao(GenericDao):
                     else:
                         tr.rollback()
                         return {'err': 2}
-                tr.commit()
+                self._gcommit(tr)
                 return {subject.fullname: 0}
         except Exception as e:
             print(f"Exception caught at SchedulerDao.update(): {e}")
@@ -339,7 +331,7 @@ class SchedulerDao(GenericDao):
 
         tr = None
         try:
-            tr = self.session.begin_nested()
+            tr = self._session.begin_nested()
             changed = False
             eager_enrollments = self.find_enrollments(student.id)
             for reg in eager_enrollments:
@@ -347,7 +339,7 @@ class SchedulerDao(GenericDao):
                     changed = True
                     reg.active = False
 
-            tr.commit()
+            self._gcommit(tr)
             return {0: [reg.subject.fullname for reg in eager_enrollments]} if changed else {'err': 2}
         except Exception as e:
             print(f"Exception caught at locking enrollments: {e}")
