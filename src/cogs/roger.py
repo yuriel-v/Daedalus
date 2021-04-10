@@ -2,7 +2,8 @@
 import requests
 
 from asyncio.tasks import sleep
-from controller import ferozes
+from cogs.dbc import DaedalusBaseCog
+from core.utils import yaml, print_exc
 from discord import Message
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
@@ -12,35 +13,27 @@ from os import getenv
 from random import randint
 
 
-class RogerDotNet(commands.Cog, name='Roger'):
+class RogerDotNet(DaedalusBaseCog, name='Roger'):
     def __init__(self, bot):
         self.bot = bot
-        self.roger_respostas = {
-            1: "Justo",
-            2: "Sim, é justo",
-            3: "É, talvez",
-            4: "Possível",
-            5: "POG",
-            6: "SE LASCAR",
-            7: "Pega no meu canudo",
-            8: "Ah vai tomar banho",
-            9: "NA tu",
-            10: "Não cara, não",
-            11: "Cacilda",
-            12: "Escreva novamente, serumaninho",
-            13: "NA você, NA eu, NA todo mundo",
-            14: "Y''m bug mg'lloig",
-            15: "Seus limites só são delimitados por suas palavras"
-        }
+        with open('./src/resources/roger.yml', encoding='utf-8') as file:
+            self.roger_respostas = yaml.load(file)['roger_respostas']
         self.cmds = {
             '?': self.roger_foto,
             'responde': self.roger_responde
         }
 
-    def ferozes():
-        async def predicate(ctx: commands.Context):
-            return (ctx.guild.id == ferozes) and (ctx.prefix == 'Roger ')
-        return commands.check(predicate)
+        nl = '\n'
+        self._help_info = f"""
+        Roger hotline: Fale com o Roger!
+        A nossa emulação do Roger, auxiliada pela própria lenda em charme e osso, responde às suas perguntas
+        com `Roger responde:` e, caso tenha saudades do mito, só pergunte pelo Roger com `Roger ?` (com espaço!)
+        que ele aparece em uma de dezenas de fotos lendárias!
+        Mas tenha cuidado com o Julio e a sua cobra de estimação.\n
+        Comandos incluem:
+        {nl.join([f'- {x}' for x in self.cmds.keys()])}
+        """
+        self._help_info = '\n'.join([x.strip() for x in self._help_info.split('\n')]).strip()
 
     async def cog_command_error(self, ctx: commands.Context, error):
         if isinstance(error, commands.CommandOnCooldown):
@@ -50,7 +43,6 @@ class RogerDotNet(commands.Cog, name='Roger'):
 
     @commands.command(name='?')
     @commands.cooldown(rate=1, per=5, type=BucketType.user)
-    @ferozes()
     async def roger_foto(self, ctx: commands.Context):
         """Você perguntou? O Roger aparece!"""
         msg: Message = await ctx.send("Invocando o Roger...")
@@ -67,12 +59,12 @@ class RogerDotNet(commands.Cog, name='Roger'):
                 ct = None
             await msg.edit(content=ct, embed=embed)
 
-            if cobra and ctx.guild.id == ferozes:
+            if cobra and ctx.guild.id == 567817989806882818:
                 await self._aprisionar(ctx)
 
         except Exception as e:
             await msg.edit("Ih, deu zica.")
-            print(f"Zica thrown: {e}")
+            print_exc("Zica thrown:")
 
     def _fetch_roger_image(self):
         endpoint = "https://api.imgur.com/3/album/xv4Jn5D/images"
@@ -108,30 +100,11 @@ class RogerDotNet(commands.Cog, name='Roger'):
                 await ctx.send(escaped)
 
     @commands.command('responde:')
-    @ferozes()
     async def roger_responde(self, ctx: commands.Context, *, arguments=None):
         """
-        Roger responde: Eu sou bom programador?
-
-        Roger diz: SE LASCAR
+        https://i.gyazo.com/dc5e9bb1f93ebc622b9ae36e3c370fc8.png
         """
         if arguments:
             await ctx.send(f"<@450731404532383765> diz: {self.roger_respostas[randint(1, len(self.roger_respostas.keys()))]}")
         else:
             await ctx.send(f"<@450731404532383765> diz: Se lascar, pergunta alguma coisa!")
-
-    def cog_info(self, command=None) -> str:
-        if command is not None and str(command).lower() in self.cmds.keys():
-            reply = f'-- {str(command).lower()} --\n' + self.cmds[str(command)].__doc__
-        else:
-            nl = '\n'
-            reply = f"""
-            Roger hotline: Fale com o Roger!
-            A nossa emulação do Roger, auxiliada pela própria lenda em charme e osso, responde às suas perguntas
-            com `Roger responde:` e, caso tenha saudades do mito, só pergunte pelo Roger com `Roger ?` (com espaço!)
-            que ele aparece em uma de dezenas de fotos lendárias!
-            Mas tenha cuidado com o Julio e a sua cobra de estimação.\n
-            Comandos incluem:
-            {nl.join([f'- {x}' for x in self.cmds.keys()])}
-            """
-        return '\n'.join([x.strip() for x in reply.split('\n')]).strip()

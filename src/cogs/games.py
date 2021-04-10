@@ -1,70 +1,60 @@
 # Módulo de joguinhos (espero que) inofensivos.
-from discord.colour import Colour
-from discord.embeds import Embed
 import requests
 
-from discord.ext import commands
-from random import randint
-from discord.ext.commands.cooldowns import BucketType
-from controller.misc import split_args, dprint
 from asyncio.tasks import sleep
+from cogs.dbc import DaedalusBaseCog
+from core.utils import yaml, dprint, print_exc
+from discord.colour import Colour
+from discord.embeds import Embed
+from discord.ext import commands
+from discord.ext.commands.cooldowns import BucketType
+from random import randint
 
 
-class Games(commands.Cog, name='Games'):
+class Games(DaedalusBaseCog, name='Games'):
     def __init__(self, bot):
+        nl = '\n'
         self.bot = bot
-        self.eightball_replies = {
-            1: "As I see it, yes.",
-            2: "Ask again later.",
-            3: "Better not tell you now.",
-            4: "Cannot predict now.",
-            5: "Concentrate and ask again.",
-            6: "Don't count on it.",
-            7: "It is certain.",
-            8: "It is decidedly so.",
-            9: "Most likely.",
-            10: "My reply is no.",
-            11: "My sources say no.",
-            12: "Outlook not so good.",
-            13: "Outlook good.",
-            14: "Reply hazy, try again.",
-            15: "Signs point to yes.",
-            16: "Very doubtful.",
-            17: "Without a doubt.",
-            18: "Yes.",
-            19: "Yes - definitely.",
-            20: "You may rely on it."
-        }
         self.cmds = {
             '8ball': self.eight_ball,
             'rr': self.russian_roulette,
             'dog': self.random_dog,
             'cat': self.random_cat
         }
+        with open('./src/resources/games.yml', encoding='utf-8') as file:
+            self.eightball_replies = yaml.load(file)['eightball_replies']
 
-    async def cog_command_error(self, ctx, error):
+        self._help_info = f"""
+        Games
+        Esse módulo contém joguinhos (espero que) inofensivos.\n
+        Comandos incluem:
+        {nl.join([f'- {x}' for x in self.cmds.keys()])}
+        """
+        self._help_info = '\n'.join([x.strip() for x in self._help_info.split('\n')]).strip()
+
+    async def cog_command_error(self, ctx: commands.Context, error):
         if isinstance(error, commands.CommandOnCooldown):
             await ctx.send("Calma, rapaz. Sem spam.")
         else:
-            print(f"Exception raised: {error}")
+            print_exc()
 
     # Bola 8 mágica
     @commands.command(name='8ball')
-    async def eight_ball(self, ctx):
+    async def eight_ball(self, ctx: commands.Context):
         """Consulta a omnisciente bola 8 para responder uma pergunta."""
         await ctx.send(f"{ctx.message.author.mention}: {self.eightball_replies[randint(1, 20)]}")
 
     # Roleta Russa
     @commands.command(name='rr')
     @commands.cooldown(rate=1, per=5, type=BucketType.user)
-    async def russian_roulette(self, ctx):
+    async def russian_roulette(self, ctx: commands.Context, *, arguments):
         """
         Roleta russa com N opções. Se o trigger cair no meio delas, você vai morrer por (opções / 2) minutos. 6 opções por padrão.\n
         - Sintaxe: `rr opções`\n
         - Exemplo: `rr 10`\n
         P.S. Não chame o bot de diabo e mande ele morrer ao mesmo tempo, ele fica nervoso.
         """
-        arguments = split_args(ctx.message.content)
+        arguments = arguments.split()
         options = 6
         if len(arguments) > 0 and str(arguments[0]).isnumeric() and int(arguments[0]) > 1:
             options = abs(int(arguments[0]))
@@ -108,12 +98,12 @@ class Games(commands.Cog, name='Games'):
                     if 'unknown member' in str(e).lower():
                         await ctx.send(f"Parece que {ctx.author.name} morreu de vez...")
                     else:
-                        print(f"Exception raised: {e}")
+                        print_exc()
             except Exception as e:
                 if 'missing permisisons' in str(e).lower():
                     await ctx.send(f"A arma atirou, mas parece que {ctx.author.name} é imortal...")
                 else:
-                    print(f"Exception raised: {e}")
+                    print_exc()
 
         else:
             await ctx.send(u'<:ikillu:700684891251277904> \U0001F389')
@@ -136,21 +126,3 @@ class Games(commands.Cog, name='Games'):
         embed = Embed(description='Meow!', colour=Colour(randint(0x000000, 0xFFFFFF)))
         embed.set_image(url=filename)
         await ctx.send(embed=embed)
-
-    def cog_info(self, command=None) -> str:
-        if command is not None and str(command).lower() in self.cmds.keys():
-            if isinstance(self.cmds[str(command)], commands.Command):
-                reply = self.cmds[str(command)].help
-            else:
-                reply = self.cmds[str(command)].__doc__
-        else:
-            print('Proc outer else')
-            nl = '\n'
-            reply = f"""
-            Games
-            Esse módulo contém joguinhos (espero que) inofensivos.\n
-            Comandos incluem:
-            {nl.join([f'- {x}' for x in self.cmds.keys()])}
-            """
-
-        return '\n'.join([x.strip() for x in reply.split('\n')]).strip()
