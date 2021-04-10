@@ -3,8 +3,14 @@ from os import getenv
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 
+database_url = getenv("DATABASE_URL").split(', ')[0]
+if not database_url.startswith('postgresql'):
+    database_url = database_url.split(':')
+    database_url[0] = 'postgresql'
+    database_url = ':'.join(database_url)
+
 engin = create_engine(
-    getenv("DATABASE_URL").split(', ')[0],
+    database_url,
     echo=(getenv("DAEDALUS_ENV").upper() == "DEV"),
     connect_args={'connect_timeout': 3},
     pool_pre_ping=True
