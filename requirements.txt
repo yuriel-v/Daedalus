@@ -1,5 +1,5 @@
 discord.py
 SQLALchemy
-psycopg2
+psycopg2-binary
 requests
 ruamel.yaml
