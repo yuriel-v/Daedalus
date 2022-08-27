@@ -39,14 +39,13 @@ if daedalus['environment'] == "DEV" and devengin is not None:
 
 
 # Cogs
-async def add_cogs():
-    await bot.add_cog(Misc(bot))
-    await bot.add_cog(Games(bot))
-    await bot.add_cog(RogerDotNet(bot))
-    await bot.add_cog(DaedalusHelp(bot))
-    await bot.add_cog(StudentController(bot))
-    await bot.add_cog(SubjectController(bot))
-    await bot.add_cog(ScheduleController(bot))
+bot.add_cog(Misc(bot))
+bot.add_cog(Games(bot))
+bot.add_cog(RogerDotNet(bot))
+bot.add_cog(DaedalusHelp(bot))
+bot.add_cog(StudentController(bot))
+bot.add_cog(SubjectController(bot))
+bot.add_cog(ScheduleController(bot))
 
 
 # Mensagem de inicialização
@@ -62,7 +61,6 @@ Loaded cogs:
 
 @bot.listen('on_ready')
 async def ready():
-    await add_cogs()
     print(init + init2 % (list_cogs()))
 
 
