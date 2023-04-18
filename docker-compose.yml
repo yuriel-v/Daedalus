@@ -1,7 +1,7 @@
 # Docker compose file for Daedalus Project
 services:
   bot:
-    image: yurielnet/daedalus:1.2
+    image: yurielnet/daedalus:1.3.1
     restart: always
     depends_on:
       - db
@@ -14,7 +14,7 @@ services:
       DAEDALUS_TOKEN: change me!
       DATABASE_URL: postgres://postgres:asdf@daedalus-db.daedalus.yurielnet:5432/daedalus
     working_dir: /home/daedalus
-    entrypoint: /bin/bash -c "sleep 30 && python3 ./src/main.py"
+    entrypoint: /bin/bash -c "sleep 30 && python3 ./main.py"
 
   db:
     image: postgres:latest
@@ -24,10 +24,11 @@ services:
       - daedalus.yurielnet
     environment:
       POSTGRES_PASSWORD: asdf
+      POSTGRES_DB: daedalus
       PGDATA: /var/lib/postgresql/data/daedalus
+      POSTGRES_INITDB_ARGS: --locale-provider=icu --icu-locale=pt-BR
     volumes:
       - db1:/var/lib/postgresql/data
-    command: /bin/su -c "/var/lib/postgresql/data/restore.sh" postgres
 
 networks:
   daedalus.yurielnet:
@@ -37,4 +38,4 @@ networks:
 
 volumes:
   db1:
-    external: true
+    #external: true
