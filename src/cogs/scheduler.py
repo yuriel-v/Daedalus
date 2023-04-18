@@ -124,7 +124,7 @@ class ScheduleController(DaedalusBaseCog, name='Schedule Controller: sc'):
         if len(arguments) < 3:
             await ctx.send(invalid_syntax)
         else:
-            exam_grades = {'AV1': [8.0, 1], 'APS1': [2.0, 2], 'AV2': [8.0, 3], 'APS2': [2.0, 4], 'AV3': [10.0, 5]}
+            exam_grades = {'AV1': [6.0, 1], 'APS1': [4.0, 2], 'AV2': [6.0, 3], 'APS2': [4.0, 4], 'AV3': [10.0, 5]}
             msg: Message = await ctx.send('Atualizando nota...')
             try:
                 if len(arguments) > 4:

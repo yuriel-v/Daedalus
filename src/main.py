@@ -37,6 +37,7 @@ initialize_sql(engin)
 if daedalus['environment'] == "DEV" and devengin is not None:
     initialize_sql(devengin)
 
+
 # Cogs
 bot.add_cog(Misc(bot))
 bot.add_cog(Games(bot))
@@ -45,6 +46,7 @@ bot.add_cog(DaedalusHelp(bot))
 bot.add_cog(StudentController(bot))
 bot.add_cog(SubjectController(bot))
 bot.add_cog(ScheduleController(bot))
+
 
 # Mensagem de inicialização
 init = f"""
@@ -127,7 +129,7 @@ async def fmt(ctx: commands.Context, *, arguments):
 # Loop principal
 def main(*args, **kwargs):
     global bot
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_event_loop()  # TODO: Fix this maybe, apparently there is no more current event loop
 
     async def run_bot():
         try:

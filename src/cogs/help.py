@@ -13,8 +13,6 @@ servir como uma espécie de agenda e/ou catálogo de matérias e provas para
 estudantes de Ciência da Computação do Centro Universitário Carioca (UniCarioca).
 
 Para ajuda em um comando ou cog específico, digite `>>help comando|cog`.
-Esse bot também conta com o módulo de ajuda padrão do discord.py!
-  -> Para utilizá-lo, digite `>>help comando` ou `>>help categoria`.
 """
 
 
