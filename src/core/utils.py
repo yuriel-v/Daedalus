@@ -2,12 +2,14 @@
 import traceback
 import inspect
 
+from os import getenv
+from sys import getsizeof, stderr
+from typing import Iterable, Union
+
 from discord.ext import commands
 from discord import Member
-from os import getenv
 from ruamel.yaml import YAML
-from sys import getsizeof
-from typing import Iterable, Union
+
 
 daedalus = {
     'token': getenv("DAEDALUS_TOKEN"),
@@ -28,7 +30,7 @@ def print_exc(msg=''):
     if not msg:
         msg = f'Exception caught at {inspect.stack()[1][0].f_locals["self"].__class__.__name__}.{inspect.stack()[1][0].f_code.co_name}():'
     print(f"{msg}")
-    traceback.print_exc()
+    traceback.print_exc(file=stderr)
 
 
 def nround(number: float, decimals=1):
