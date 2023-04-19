@@ -16,7 +16,7 @@ from random import randint
 class RogerDotNet(DaedalusBaseCog, name='Roger'):
     def __init__(self, bot):
         self.bot = bot
-        with open('./src/resources/roger.yml', encoding='utf-8') as file:
+        with open('./resources/roger.yml', encoding='utf-8') as file:
             self.roger_respostas = yaml.load(file)['roger_respostas']
         self.cmds = {
             '?': self.roger_foto,

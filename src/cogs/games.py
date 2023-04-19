@@ -21,7 +21,7 @@ class Games(DaedalusBaseCog, name='Games'):
             'dog': self.random_dog,
             'cat': self.random_cat
         }
-        with open('./src/resources/games.yml', encoding='utf-8') as file:
+        with open('./resources/games.yml', encoding='utf-8') as file:
             self.eightball_replies = yaml.load(file)['eightball_replies']
 
         self._help_info = f"""
